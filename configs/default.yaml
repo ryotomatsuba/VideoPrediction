@@ -1,0 +1,27 @@
+# Default project 
+
+# Import presets
+defaults:
+  - hydra: custom
+
+# Dir name
+output_dir: ExperimentTemplate
+
+# MLflow configs
+experiment:
+  name: Default
+# Training configs
+train:
+  batch_size: 10
+  epochs: 10
+  save_best_ckpt: True
+  num_workers: 2
+  eval: False
+  optimizer:
+    name: adam
+    lr: 0.0001
+    decay: 0.0001
+
+# Model configs
+model:
+  initial_ckpt: 
