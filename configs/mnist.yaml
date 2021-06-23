@@ -13,7 +13,7 @@ experiment:
 # Training configs
 train:
   batch_size: 10
-  epochs: 20
+  epochs: 50
   save_best_ckpt: True
   num_workers: 2
   eval: False
