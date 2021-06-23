@@ -8,7 +8,8 @@ docker run \
   --gpus all \
   -v $PWD:/workspace \
   -v /home/data/ryoto:/home/data/ryoto \
-  --name $CONTAINER_NAME --rm \
+  --name $CONTAINER_NAME \
+  --rm \
   --shm-size=2g \
   $IMAGE_NAME \
   python3 train.py -cn mnist
