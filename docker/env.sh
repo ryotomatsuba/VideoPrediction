@@ -2,10 +2,10 @@
 #
 # Set environment variables.
 
-export IMAGE_NAME=${USER}_pytorch_project
-export CONTAINER_NAME=${USER}_pytorch_project
-export MLFLOW_HOST_PORT=5000
-export MLFLOW_CONTAINER_PORT=5000
+export IMAGE_NAME=experiment_template
+export CONTAINER_NAME=ExperimentTemplate
+export MLFLOW_HOST_PORT=5003
+export MLFLOW_CONTAINER_PORT=5003
 
 if [ -e docker/env_dev.sh ]; then
   . docker/env_dev.sh
