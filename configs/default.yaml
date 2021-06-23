@@ -6,6 +6,7 @@ defaults:
 
 # Dir name
 output_dir: ExperimentTemplate
+mlrun_path: /data/${output_dir}/mlruns/
 
 # MLflow configs
 experiment:

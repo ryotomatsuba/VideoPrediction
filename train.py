@@ -18,7 +18,7 @@ def train(cfg):
 @hydra.main(config_path="configs", config_name="default")
 def main(cfg: DictConfig) -> None:
     cwd=hydra.utils.get_original_cwd()
-    mlrun_path=f'/data/{cfg.output_dir}/mlruns/'
+    mlrun_path=cfg.mlrun_path
     if not os.path.isdir(mlrun_path):
         os.makedirs(mlrun_path, exist_ok=True)
     mlflow.set_tracking_uri(mlrun_path)
