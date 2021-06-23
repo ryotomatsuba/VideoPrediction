@@ -20,4 +20,4 @@ job_logging:
     - file
   disable_existing_loggers: false
 run: 
-  dir: /home/data/ryoto/${output_dir}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  dir: /data/${output_dir}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}

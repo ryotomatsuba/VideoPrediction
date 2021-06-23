@@ -24,23 +24,23 @@ RUN apt-get update && \
     apt-get install -y software-properties-common && \
     apt-add-repository ppa:fish-shell/release-3 && \
     apt-add-repository ppa:deadsnakes/ppa && \
-		apt-get install -y \
-			curl \
-			git \
-			sudo \
-			tree \
-			vim \
-			wget \
-			build-essential \
-			unzip \
-			libopencv-dev \
-			fish \
-			fonts-powerline \
-			python3.9 \
-			python3-pip && \
+    apt-get install -y \
+    curl \
+    git \
+    sudo \
+    tree \
+    vim \
+    wget \
+    build-essential \
+    unzip \
+    libopencv-dev \
+    fish \
+    fonts-powerline \
+    python3.9 \
+    python3-pip && \
     apt-get clean && \
-		rm -rf /var/lib/apt/lists/* && \
-		rm -rf /var/cache/apk/
+    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/cache/apk/
 
 # python
 COPY docker/requirements.txt $WORK_PATH/docker/
@@ -48,7 +48,7 @@ ENV PYTHONPATH "/workspace:${PYTHONPATH}"
 ENV PIP_OPTIONS "--no-cache-dir --progress-bar off"
 RUN pip3 install -U pip && \
     pip3 install ${PIP_OPTIONS} -r $WORK_PATH/docker/requirements.txt && \
-		pip3 install ${PIP_OPTIONS} -U setuptools
+    pip3 install ${PIP_OPTIONS} -U setuptools
 
 # nvidia
 # WORKDIR /tmp/apex/
