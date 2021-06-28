@@ -9,7 +9,8 @@ import torch
 import torch.nn as nn
 from torch import optim
 from tqdm import tqdm
-
+import hydra
+from omegaconf import DictConfig
 from eval import eval_net
 
 from torch.utils.tensorboard import SummaryWriter
@@ -123,28 +124,11 @@ def train_net(net,
     writer.close()
 
 
-def get_args():
-    parser = argparse.ArgumentParser(description='Train the UNet on images and target masks',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-e', '--epochs', metavar='E', type=int, default=5,
-                        help='Number of epochs', dest='epochs')
-    parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=1,
-                        help='Batch size', dest='batchsize')
-    parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.0001,
-                        help='Learning rate', dest='lr')
-    parser.add_argument('-f', '--load', dest='load', type=str, default=False,
-                        help='Load model from a .pth file')
-    parser.add_argument('-s', '--scale', dest='scale', type=float, default=0.5,
-                        help='Downscaling factor of the images')
-    parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
-                        help='Percent of the data that is used as validation (0-100)')
-
-    return parser.parse_args()
 
 
-if __name__ == '__main__':
+@hydra.main(config_path="configs", config_name="unet")
+def main(cfg: DictConfig) -> None:
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-    args = get_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Using device {device}')
 
@@ -160,11 +144,11 @@ if __name__ == '__main__':
                  f'\t{net.n_classes} output channels (classes)\n'
                  f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
 
-    if args.load:
+    if cfg.load:
         net.load_state_dict(
-            torch.load(args.load, map_location=device)
+            torch.load(cfg.load, map_location=device)
         )
-        logging.info(f'Model loaded from {args.load}')
+        logging.info(f'Model loaded from {cfg.load}')
 
     net.to(device=device)
     # faster convolutions, but more memory
@@ -172,12 +156,12 @@ if __name__ == '__main__':
 
     try:
         train_net(net=net,
-                  epochs=args.epochs,
-                  batch_size=args.batchsize,
-                  lr=args.lr,
+                  epochs=cfg.epochs,
+                  batch_size=cfg.batch_size,
+                  lr=cfg.lr,
                   device=device,
-                  img_scale=args.scale,
-                  val_percent=args.val / 100)
+                  img_scale=cfg.scale,
+                  val_percent=cfg.val / 100)
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
@@ -185,3 +169,5 @@ if __name__ == '__main__':
             sys.exit(0)
         except SystemExit:
             os._exit(0)
+if __name__ == '__main__':
+    main()
