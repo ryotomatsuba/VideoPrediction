@@ -11,25 +11,10 @@ import hydra
 from omegaconf import DictConfig
 
 from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data import DataLoader, Dataset,random_split
+from torch.utils.data import DataLoader,random_split
+from data.dataset import MnistDataset
 
 dir_checkpoint = 'checkpoints/'
-class BasicDataset(Dataset):
-    
-    def __init__(self, data, input_num=4):
-        self.data = data
-        self.input_num=input_num
-
-    def __len__(self):
-        return len(self.data)
-        
-    def __getitem__(self, index):
-        X=self.data[index][:4]
-        X=torch.from_numpy(X).type(torch.FloatTensor)
-        Y=self.data[index][4][np.newaxis]
-        Y=torch.from_numpy(Y).type(torch.FloatTensor)
-        return X,Y
-        
 
 def train_net(net,
               device,
@@ -39,8 +24,8 @@ def train_net(net,
               val_percent=0.1,
               save_cp=True,
               img_scale=0.5):
-    data=np.load("/home/data/ryoto/Datasets/mnist/train.npy")
-    dataset = BasicDataset(data)
+    data=np.load("/home/data/ryoto/Datasets/mnist/dev_data_10.npy")
+    dataset = MnistDataset(data)
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
@@ -95,26 +80,26 @@ def train_net(net,
             optimizer.step()
 
             global_step += 1
-            if global_step % (n_train // (10 * batch_size)) == 0:
-                for tag, value in net.named_parameters():
-                    tag = tag.replace('.', '/')
-                    writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
-                    writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
-                val_score = 0
-                scheduler.step(val_score)
-                writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
+        if epoch % 1 == 0: # checkpoint interval
+            for tag, value in net.named_parameters():
+                tag = tag.replace('.', '/')
+                writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
+                writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
+            val_score = 0
+            scheduler.step(val_score)
+            writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
 
-                if net.n_classes > 1:
-                    logging.info('Validation cross entropy: {}'.format(val_score))
-                    writer.add_scalar('Loss/test', val_score, global_step)
-                else:
-                    logging.info('Validation Dice Coeff: {}'.format(val_score))
-                    writer.add_scalar('Dice/test', val_score, global_step)
+            if net.n_classes > 1:
+                logging.info('Validation cross entropy: {}'.format(val_score))
+                writer.add_scalar('Loss/test', val_score, global_step)
+            else:
+                logging.info('Validation Dice Coeff: {}'.format(val_score))
+                writer.add_scalar('Dice/test', val_score, global_step)
 
-                # writer.add_images('images', X, global_step)
-                if net.n_classes == 1:
-                    writer.add_images('masks/true', Y, global_step)
-                    writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
+            # writer.add_images('images', X, global_step)
+            if net.n_classes == 1:
+                writer.add_images('masks/true', Y, global_step)
+                writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
 
         if save_cp:
             try:
