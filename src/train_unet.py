@@ -11,16 +11,27 @@ from torch import optim
 from tqdm import tqdm
 import hydra
 from omegaconf import DictConfig
-from eval import eval_net
 
 from torch.utils.tensorboard import SummaryWriter
-from data.dataset import BasicDataset
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Dataset,random_split
 
-dir_img = 'data/imgs/'
-dir_mask = 'data/masks/'
 dir_checkpoint = 'checkpoints/'
+class BasicDataset(Dataset):
+    
+    def __init__(self, data, input_num=4):
+        self.data = data
+        self.input_num=input_num
 
+    def __len__(self):
+        return len(self.data)
+        
+    def __getitem__(self, index):
+        X=self.data[index][:4]
+        X=torch.from_numpy(X).type(torch.FloatTensor)
+        Y=self.data[index][4]
+        Y=torch.from_numpy(Y).type(torch.FloatTensor)
+        return X,Y
+        
 
 def train_net(net,
               device,
@@ -30,8 +41,8 @@ def train_net(net,
               val_percent=0.1,
               save_cp=True,
               img_scale=0.5):
-
-    dataset = BasicDataset(dir_img, dir_mask, img_scale)
+    data=np.load("/home/data/ryoto/Datasets/mnist/train.npy")
+    dataset = BasicDataset(data)
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
@@ -64,20 +75,18 @@ def train_net(net,
 
         epoch_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img') as pbar:
-            for batch in train_loader:
-                imgs = batch['image']
-                true_masks = batch['mask']
-                assert imgs.shape[1] == net.n_channels, \
+            for X,Y in train_loader:
+                assert X.shape[1] == net.n_channels, \
                     f'Network has been defined with {net.n_channels} input channels, ' \
-                    f'but loaded images have {imgs.shape[1]} channels. Please check that ' \
+                    f'but loaded images have {X.shape[1]} channels. Please check that ' \
                     'the images are loaded correctly.'
 
-                imgs = imgs.to(device=device, dtype=torch.float32)
+                X = X.to(device=device, dtype=torch.float32)
                 mask_type = torch.float32 if net.n_classes == 1 else torch.long
-                true_masks = true_masks.to(device=device, dtype=mask_type)
+                Y = Y.to(device=device, dtype=mask_type)
 
-                masks_pred = net(imgs)
-                loss = criterion(masks_pred, true_masks)
+                masks_pred = net(X)
+                loss = criterion(masks_pred, Y)
                 epoch_loss += loss.item()
                 writer.add_scalar('Loss/train', loss.item(), global_step)
 
@@ -88,14 +97,14 @@ def train_net(net,
                 nn.utils.clip_grad_value_(net.parameters(), 0.1)
                 optimizer.step()
 
-                pbar.update(imgs.shape[0])
+                pbar.update(X.shape[0])
                 global_step += 1
                 if global_step % (n_train // (10 * batch_size)) == 0:
                     for tag, value in net.named_parameters():
                         tag = tag.replace('.', '/')
                         writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
                         writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
-                    val_score = eval_net(net, val_loader, device)
+                    val_score = 0
                     scheduler.step(val_score)
                     writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
 
@@ -106,9 +115,9 @@ def train_net(net,
                         logging.info('Validation Dice Coeff: {}'.format(val_score))
                         writer.add_scalar('Dice/test', val_score, global_step)
 
-                    writer.add_images('images', imgs, global_step)
+                    writer.add_images('images', X, global_step)
                     if net.n_classes == 1:
-                        writer.add_images('masks/true', true_masks, global_step)
+                        writer.add_images('masks/true', Y, global_step)
                         writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
 
         if save_cp:
@@ -126,7 +135,7 @@ def train_net(net,
 
 
 
-@hydra.main(config_path="configs", config_name="unet")
+@hydra.main(config_path="../configs", config_name="unet")
 def main(cfg: DictConfig) -> None:
     logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
