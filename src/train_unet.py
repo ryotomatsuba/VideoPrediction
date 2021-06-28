@@ -28,7 +28,7 @@ class BasicDataset(Dataset):
     def __getitem__(self, index):
         X=self.data[index][:4]
         X=torch.from_numpy(X).type(torch.FloatTensor)
-        Y=self.data[index][4]
+        Y=self.data[index][4][np.newaxis]
         Y=torch.from_numpy(Y).type(torch.FloatTensor)
         return X,Y
         
@@ -115,7 +115,7 @@ def train_net(net,
                         logging.info('Validation Dice Coeff: {}'.format(val_score))
                         writer.add_scalar('Dice/test', val_score, global_step)
 
-                    writer.add_images('images', X, global_step)
+                    # writer.add_images('images', X, global_step)
                     if net.n_classes == 1:
                         writer.add_images('masks/true', Y, global_step)
                         writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
@@ -147,7 +147,7 @@ def main(cfg: DictConfig) -> None:
     #   - For 1 class and background, use n_classes=1
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
-    net = UNet(n_channels=3, n_classes=1, bilinear=True)
+    net = UNet(n_channels=4, n_classes=1, bilinear=True)
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
                  f'\t{net.n_classes} output channels (classes)\n'
