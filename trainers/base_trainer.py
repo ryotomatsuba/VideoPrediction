@@ -3,11 +3,54 @@
 
 import logging
 from abc import ABC
-
+from omegaconf import DictConfig,ListConfig
+from mlflow.tracking import MlflowClient
 import mlflow
-
+import torch
 
 log = logging.getLogger(__name__)
+class MlflowWriter():
+    """with mlflow.start_run():のブロック外でもMLflowを使うため、ラッパークラスを作る"""
+    def __init__(self, experiment_name, mlrun_path, **kwargs):
+        mlflow.set_tracking_uri(mlrun_path)
+        self.client = MlflowClient(**kwargs)
+        try:
+            self.experiment_id = self.client.create_experiment(experiment_name)
+        except:
+            self.experiment_id = self.client.get_experiment_by_name(experiment_name).experiment_id
+
+        self.run_id = self.client.create_run(self.experiment_id).info.run_id
+
+    def log_params_from_omegaconf_dict(self, params):
+        for param_name, element in params.items():
+            self._explore_recursive(param_name, element)
+
+    def _explore_recursive(self, parent_name, element):
+        if isinstance(element, DictConfig):
+            for k, v in element.items():
+                if isinstance(v, DictConfig) or isinstance(v, ListConfig):
+                    self._explore_recursive(f'{parent_name}.{k}', v)
+                else:
+                    self.client.log_param(self.run_id, f'{parent_name}.{k}', v)
+        elif isinstance(element, ListConfig):
+            for i, v in enumerate(element):
+                self.client.log_param(self.run_id, f'{parent_name}.{i}', v)
+
+    def log_torch_model(self, model):
+        with mlflow.start_run(self.run_id):
+            torch.log_model(model, 'models')
+
+    def log_params(self, params):
+        self.client.log_params(self.run_id, params)
+
+    def log_metrics(self, metrics):
+        self.client.log_metrics(self.run_id, metrics)
+
+    def log_artifact(self, local_path):
+        self.client.log_artifact(self.run_id, local_path)
+
+    def set_terminated(self):
+        self.client.set_terminated(self.run_id)
 
 
 class BaseTrainer(ABC):
@@ -27,7 +70,7 @@ class BaseTrainer(ABC):
             cfg: Config of project.
 
         """
-
+        self.mlwriter=MlflowWriter(cfg.experiment.name,cfg.mlrun_path)
         self.cfg = cfg
 
 
@@ -54,9 +97,6 @@ class BaseTrainer(ABC):
 
         log.info("Training process has begun.")
         
-        mlflow.set_tracking_uri(self.cfg.mlrun_path)
-        mlflow.set_experiment(self.cfg.experiment.name)
-
 
     def eval(self,eval_dataloader: object = None, epoch: int = 0) -> float:
         """Evaluation
@@ -88,17 +128,17 @@ class BaseTrainer(ABC):
             "lr": self.cfg.train.optimizer.lr
         }
 
-        mlflow.log_params(params)
+        self.mlwriter.log_params(params)
 
 
     def log_artifacts(self) -> None:
         """log artifacts"""
         
-        artifacts_dir = mlflow.get_artifact_uri()
+        artifacts_dir = self.mlwriter.get_artifact_uri()
         ckpt_path = f"{artifacts_dir.replace('file://','')}/{self.cfg.train.ckpt_path}"
         log.info("You can evaluate the model by running the following code.")
         log.info(f"$ python train.py eval=True project.model.initial_ckpt={ckpt_path}")
 
-        mlflow.log_artifact("train.log")
-        mlflow.log_artifact(".hydra/config.yaml")
-        mlflow.log_artifact(self.cfg.train.ckpt_path)
+        self.mlwriter.log_artifact("train.log")
+        self.mlwriter.log_artifact(".hydra/config.yaml")
+        self.mlwriter.log_artifact(self.cfg.train.ckpt_path)
