@@ -1,5 +1,4 @@
 from models.unet import UNet
-import argparse
 import logging
 import os
 import sys
@@ -8,7 +7,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
-from tqdm import tqdm
 import hydra
 from omegaconf import DictConfig
 
@@ -71,54 +69,52 @@ def train_net(net,
         criterion = nn.BCEWithLogitsLoss()
 
     for epoch in range(epochs):
+
+        logging.info(f'epoch: {epoch}')
         net.train()
 
         epoch_loss = 0
-        with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img') as pbar:
-            for X,Y in train_loader:
-                assert X.shape[1] == net.n_channels, \
-                    f'Network has been defined with {net.n_channels} input channels, ' \
-                    f'but loaded images have {X.shape[1]} channels. Please check that ' \
-                    'the images are loaded correctly.'
+        for X,Y in train_loader:
+            assert X.shape[1] == net.n_channels, \
+                f'Network has been defined with {net.n_channels} input channels, ' \
+                f'but loaded images have {X.shape[1]} channels. Please check that ' \
+                'the images are loaded correctly.'
 
-                X = X.to(device=device, dtype=torch.float32)
-                mask_type = torch.float32 if net.n_classes == 1 else torch.long
-                Y = Y.to(device=device, dtype=mask_type)
+            X = X.to(device=device, dtype=torch.float32)
+            mask_type = torch.float32 if net.n_classes == 1 else torch.long
+            Y = Y.to(device=device, dtype=mask_type)
 
-                masks_pred = net(X)
-                loss = criterion(masks_pred, Y)
-                epoch_loss += loss.item()
-                writer.add_scalar('Loss/train', loss.item(), global_step)
+            masks_pred = net(X)
+            loss = criterion(masks_pred, Y)
+            epoch_loss += loss.item()
+            writer.add_scalar('Loss/train', loss.item(), global_step)
 
-                pbar.set_postfix(**{'loss (batch)': loss.item()})
+            optimizer.zero_grad()
+            loss.backward()
+            nn.utils.clip_grad_value_(net.parameters(), 0.1)
+            optimizer.step()
 
-                optimizer.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_value_(net.parameters(), 0.1)
-                optimizer.step()
+            global_step += 1
+            if global_step % (n_train // (10 * batch_size)) == 0:
+                for tag, value in net.named_parameters():
+                    tag = tag.replace('.', '/')
+                    writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
+                    writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
+                val_score = 0
+                scheduler.step(val_score)
+                writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
 
-                pbar.update(X.shape[0])
-                global_step += 1
-                if global_step % (n_train // (10 * batch_size)) == 0:
-                    for tag, value in net.named_parameters():
-                        tag = tag.replace('.', '/')
-                        writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
-                        writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
-                    val_score = 0
-                    scheduler.step(val_score)
-                    writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
+                if net.n_classes > 1:
+                    logging.info('Validation cross entropy: {}'.format(val_score))
+                    writer.add_scalar('Loss/test', val_score, global_step)
+                else:
+                    logging.info('Validation Dice Coeff: {}'.format(val_score))
+                    writer.add_scalar('Dice/test', val_score, global_step)
 
-                    if net.n_classes > 1:
-                        logging.info('Validation cross entropy: {}'.format(val_score))
-                        writer.add_scalar('Loss/test', val_score, global_step)
-                    else:
-                        logging.info('Validation Dice Coeff: {}'.format(val_score))
-                        writer.add_scalar('Dice/test', val_score, global_step)
-
-                    # writer.add_images('images', X, global_step)
-                    if net.n_classes == 1:
-                        writer.add_images('masks/true', Y, global_step)
-                        writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
+                # writer.add_images('images', X, global_step)
+                if net.n_classes == 1:
+                    writer.add_images('masks/true', Y, global_step)
+                    writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
 
         if save_cp:
             try:
