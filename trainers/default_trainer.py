@@ -8,8 +8,6 @@ import torch
 import mlflow
 
 from trainers.base_trainer import BaseTrainer
-from models import get_model
-from data import get_dataloader
 
 
 log = logging.getLogger(__name__)
@@ -33,7 +31,6 @@ class DefaultTrainer(BaseTrainer):
         """
 
         super().__init__(cfg)
-        self.model = get_model(self.cfg)
         self.train_dataloader = None
         self.val_dataloader = None
         self.test_dataloader = None
@@ -52,11 +49,9 @@ class DefaultTrainer(BaseTrainer):
         """
 
         if not eval:
-            self.train_dataloader, self.val_dataloader = get_dataloader(self.cfg, mode="trainval")
             self.train()
 
         else:
-            self.test_dataloader = get_dataloader(self.cfg, mode="test")
             self.eval()
 
 

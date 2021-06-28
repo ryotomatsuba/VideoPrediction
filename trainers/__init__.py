@@ -6,7 +6,7 @@ These functions are for execution.
 """
 
 from trainers.default_trainer import DefaultTrainer
-
+from .unet_trainer import UnetTrainer
 
 def get_trainer(cfg: object) -> object:
     """Get trainer
