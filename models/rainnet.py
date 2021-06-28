@@ -1,5 +1,5 @@
-from keras.models import Input,Model
-from keras.layers import Conv2D,Activation,MaxPooling2D,Dropout,concatenate,UpSampling2D
+from keras.models import *
+from keras.layers import *
 
 def rainnet(input_shape=(928, 928, 4), mode="regression"):
 
