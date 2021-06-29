@@ -93,15 +93,7 @@ class UnetTrainer(BaseTrainer):
                 scheduler.step(val_score)
                 self.log_metrics(epoch)
 
-
-                
-                
-
-
-                # writer.add_images('images', X, global_step)
-                if net.n_classes == 1:
-                    pass
-            # save model if it performes better than before
+            # save model if it performes better than it has done before
             if epoch==0:
                 torch.save(net.state_dict(),self.cfg.train.ckpt_path)
             elif self.loss["val"][-1]<min(self.loss["val"][:-1]):
@@ -116,8 +108,6 @@ class UnetTrainer(BaseTrainer):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         net.to(device=device)
         net.eval()
-        mask_type = torch.float32 if net.n_classes == 1 else torch.long
-        n_val = len(self.val_loader)  # the number of batch
         epoch_loss = 0 
 
         for X in self.val_loader:
