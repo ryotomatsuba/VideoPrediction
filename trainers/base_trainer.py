@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Abstract base model"""
-
+import glob
 import logging
 from abc import ABC
 from omegaconf import DictConfig,ListConfig
@@ -11,7 +11,7 @@ from torch.nn.modules import loss
 
 log = logging.getLogger(__name__)
 class MlflowWriter():
-    """with mlflow.start_run():のブロック外でもMLflowを使うため、ラッパークラスを作る"""
+    """wrapper class for logging to mlflow from anywere"""
     def __init__(self, experiment_name, mlrun_path, **kwargs):
         mlflow.set_tracking_uri(mlrun_path)
         self.client = MlflowClient(**kwargs)
@@ -44,9 +44,9 @@ class MlflowWriter():
     def log_params(self, params:dict):
         for key,value in params.items():
             self.client.log_param(self.run_id, key, value)
-    def log_metrics(self, metrics:dict):
+    def log_metrics(self, metrics:dict, step: int = None):
         for key,value in metrics.items():
-            self.client.log_metric(self.run_id, key, value)
+            self.client.log_metric(self.run_id, key, value, step = step)
 
     def log_artifact(self, local_path):
         self.client.log_artifact(self.run_id, local_path)
@@ -73,8 +73,9 @@ class BaseTrainer(ABC):
 
         """
         self.mlwriter=MlflowWriter(cfg.experiment.name,cfg.mlrun_path)
-        self.loss={"train": 0, "val": 0}
+        self.loss={"train": [], "val": []}
         self.cfg = cfg
+        self.log_params()
 
 
     def execute(self, eval: bool) -> None:
@@ -120,12 +121,10 @@ class BaseTrainer(ABC):
 
     def log_params(self) -> None:
         """Log parameters"""
-
         params = {
-            "dataset": self.cfg.data.dataset.name,
             "batch_size": self.cfg.train.batch_size,
             "epochs": self.cfg.train.epochs,
-            "lr": self.cfg.train.optimizer.lr
+            "lr": self.cfg.train.lr
         }
 
         self.mlwriter.log_params(params)
@@ -133,19 +132,13 @@ class BaseTrainer(ABC):
 
     def log_artifacts(self) -> None:
         """log artifacts"""
-        
-        artifacts_dir = self.mlwriter.get_artifact_uri()
-        ckpt_path = f"{artifacts_dir.replace('file://','')}/{self.cfg.train.ckpt_path}"
-        log.info("You can evaluate the model by running the following code.")
-        log.info(f"$ python train.py eval=True project.model.initial_ckpt={ckpt_path}")
-
-        self.mlwriter.log_artifact("train.log")
+        self.mlwriter.log_artifact(glob.glob(r"*.log")[0])
         self.mlwriter.log_artifact(".hydra/config.yaml")
         self.mlwriter.log_artifact(self.cfg.train.ckpt_path)
     
     def log_metrics(self,epoch) -> None:
         metrics={
-            "train_loss":self.loss["train"],
-            "val_loss":self.loss["val"],
+            "train_loss":self.loss["train"][-1],
+            "val_loss":self.loss["val"][-1],
         }
-        self.mlwriter.log_metrics(metrics)
+        self.mlwriter.log_metrics(metrics, step=epoch)

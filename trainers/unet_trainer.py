@@ -49,8 +49,6 @@ class UnetTrainer(BaseTrainer):
         """
 
         super().train()
-        dir_checkpoint = 'checkpoints/'
-        save_cp=True
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
         img_scale=self.cfg.scale
@@ -93,7 +91,7 @@ class UnetTrainer(BaseTrainer):
 
                 global_step += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
-            self.loss["train"] = loss_ave 
+            self.loss["train"].append(loss_ave) 
             logging.info(f'Train MSE     : {loss_ave}')
             # val
             if epoch % 1 == 0: # checkpoint interval
@@ -109,16 +107,11 @@ class UnetTrainer(BaseTrainer):
                 # writer.add_images('images', X, global_step)
                 if net.n_classes == 1:
                     pass
-            if save_cp:
-                try:
-                    os.mkdir(dir_checkpoint)
-                    logging.info('Created checkpoint directory')
-                except OSError:
-                    pass
-                torch.save(net.state_dict(),
-                        dir_checkpoint + f'CP_epoch{epoch + 1}.pth')
+            # save model if it performes better than before
+            if epoch>1 and self.loss["val"][-1]<min(self.loss["val"][:-2]):
+                torch.save(net.state_dict(),self.cfg.train.ckpt_path)
                 logging.info(f'Checkpoint {epoch + 1} saved !')
-
+        self.log_artifacts()
 
 
 
@@ -141,6 +134,6 @@ class UnetTrainer(BaseTrainer):
             loss = self.criterion(pred, truth)
             losses.append(loss.item())
         loss_ave=sum(losses)/len(losses)
-        self.loss["val"]=loss_ave
+        self.loss["val"].append(loss_ave)
         logging.info(f'Validation MSE: {loss_ave}')
         return loss_ave
