@@ -35,8 +35,8 @@ class UnetTrainer(BaseTrainer):
         n_val = int(len(dataset) * cfg.train.val_percent)
         n_train = len(dataset) - n_val
         train, val = random_split(dataset, [n_train, n_val])
-        self.train_loader = DataLoader(train, batch_size=cfg.train.batch_size, shuffle=True, num_workers=8, pin_memory=True)
-        self.val_loader = DataLoader(val, batch_size=cfg.train.batch_size, shuffle=False, num_workers=8, pin_memory=True, drop_last=True)
+        self.train_loader = DataLoader(train, batch_size=cfg.train.batch_size, shuffle=True, num_workers=cfg.train.num_workers, pin_memory=True)
+        self.val_loader = DataLoader(val, batch_size=cfg.train.batch_size, shuffle=False, num_workers=cfg.train.num_workers, pin_memory=True, drop_last=True)
         
         super().__init__(cfg)
 
