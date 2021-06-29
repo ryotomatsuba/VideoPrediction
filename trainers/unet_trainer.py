@@ -30,8 +30,7 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        data=np.load(cfg.dataset.train_path)
-        dataset = MnistDataset(data)
+        dataset = MnistDataset(cfg)
         n_val = int(len(dataset) * cfg.train.val_percent)
         n_train = len(dataset) - n_val
         train, val = random_split(dataset, [n_train, n_val])
