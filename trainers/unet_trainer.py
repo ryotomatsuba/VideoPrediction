@@ -71,24 +71,18 @@ class UnetTrainer(BaseTrainer):
 
             epoch_loss = 0
             # train
-            for X,Y in self.train_loader:
-                assert X.shape[1] == net.n_channels, \
-                    f'Network has been defined with {net.n_channels} input channels, ' \
-                    f'but loaded images have {X.shape[1]} channels. Please check that ' \
-                    'the images are loaded correctly.'
-
+            for X in self.train_loader:
                 X = X.to(device=device, dtype=torch.float32)
-                Y = Y.to(device=device, dtype=torch.float32)
-
-                pred = net(X)
-                loss = self.criterion(pred, Y)
-                epoch_loss += loss.item()
-
-                optimizer.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_value_(net.parameters(), 0.1)
-                optimizer.step()
-
+                input_num=self.cfg.dataset.input_num
+                total_num=X.shape[1]
+                for t in range(input_num, total_num):
+                    pred = net(X[:,t-input_num:t])
+                    loss = self.criterion(pred, X[:,t])
+                    epoch_loss += loss.item()
+                    optimizer.zero_grad()
+                    loss.backward()
+                    nn.utils.clip_grad_value_(net.parameters(), 0.1)
+                    optimizer.step()
                 global_step += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
@@ -124,18 +118,19 @@ class UnetTrainer(BaseTrainer):
         net.eval()
         mask_type = torch.float32 if net.n_classes == 1 else torch.long
         n_val = len(self.val_loader)  # the number of batch
-        losses = [] 
+        epoch_loss = 0 
 
-        for X,Y in self.val_loader:
-            imgs, truth = X,Y
-            imgs = imgs.to(device=device, dtype=torch.float32)
-            truth = truth.to(device=device, dtype=mask_type)
+        for X in self.val_loader:
+            input_num=self.cfg.dataset.input_num
+            total_num=X.shape[1]
+            for t in range(input_num,total_num):
+                with torch.no_grad():
+                    pred = net(X[:,t-input_num:t])
+                loss = self.criterion(pred, X[:,t])
+                epoch_loss += loss.item()
 
-            with torch.no_grad():
-                pred = net(imgs)
-            loss = self.criterion(pred, truth)
-            losses.append(loss.item())
-        loss_ave=sum(losses)/len(losses)
+
+        loss_ave=epoch_loss/len(self.val_loader)
         self.loss["val"].append(loss_ave)
         logging.info(f'Validation MSE: {loss_ave}')
         return loss_ave

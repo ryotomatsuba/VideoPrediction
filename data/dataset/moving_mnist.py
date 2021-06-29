@@ -11,11 +11,9 @@ class MnistDataset(Dataset):
         return len(self.data)
         
     def __getitem__(self, index):
-        X=self.data[index][:4]
+        X=self.data[index]
         X=torch.from_numpy(X).type(torch.FloatTensor)
-        Y=self.data[index][4][np.newaxis]
-        Y=torch.from_numpy(Y).type(torch.FloatTensor)
-        return X,Y
+        return X
         
 
 if __name__=="__main__":
