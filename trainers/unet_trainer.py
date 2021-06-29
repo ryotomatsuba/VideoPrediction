@@ -30,7 +30,7 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        data=np.load("/home/data/ryoto/Datasets/mnist/dev_data_10.npy")
+        data=np.load(cfg.dataset.train_path)
         dataset = MnistDataset(data)
         n_val = int(len(dataset) * cfg.train.val_percent)
         n_train = len(dataset) - n_val
@@ -108,9 +108,11 @@ class UnetTrainer(BaseTrainer):
                 if net.n_classes == 1:
                     pass
             # save model if it performes better than before
-            if epoch>1 and self.loss["val"][-1]<min(self.loss["val"][:-2]):
+            if epoch==0:
                 torch.save(net.state_dict(),self.cfg.train.ckpt_path)
-                logging.info(f'Checkpoint {epoch + 1} saved !')
+            elif self.loss["val"][-1]<min(self.loss["val"][:-1]):
+                torch.save(net.state_dict(),self.cfg.train.ckpt_path)
+                logging.info(f'Checkpoint saved !')
         self.log_artifacts()
 
 
