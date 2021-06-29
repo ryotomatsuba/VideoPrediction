@@ -56,7 +56,6 @@ class UnetTrainer(BaseTrainer):
         lr=self.cfg.train.lr
         img_scale=self.cfg.scale
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        logging.info(f'Using device {device}')
         net.to(device=device)
 
         global_step = 0
@@ -65,10 +64,8 @@ class UnetTrainer(BaseTrainer):
 
         optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min' if net.n_classes > 1 else 'max', patience=2)
-        if net.n_classes > 1:
-            criterion = nn.CrossEntropyLoss()
-        else:
-            criterion = nn.BCEWithLogitsLoss()
+
+        self.criterion = nn.MSELoss()
 
         for epoch in range(epochs):
 
@@ -83,11 +80,10 @@ class UnetTrainer(BaseTrainer):
                     'the images are loaded correctly.'
 
                 X = X.to(device=device, dtype=torch.float32)
-                mask_type = torch.float32 if net.n_classes == 1 else torch.long
-                Y = Y.to(device=device, dtype=mask_type)
+                Y = Y.to(device=device, dtype=torch.float32)
 
-                masks_pred = net(X)
-                loss = criterion(masks_pred, Y)
+                pred = net(X)
+                loss = self.criterion(pred, Y)
                 epoch_loss += loss.item()
 
                 optimizer.zero_grad()
@@ -97,15 +93,12 @@ class UnetTrainer(BaseTrainer):
 
                 global_step += 1
             if epoch % 1 == 0: # checkpoint interval
-                for tag, value in net.named_parameters():
-                    tag = tag.replace('.', '/')
-                val_score = 0
+                val_score = self.eval(net)
                 scheduler.step(val_score)
 
-                if net.n_classes > 1:
-                    logging.info('Validation cross entropy: {}'.format(val_score))
-                else:
-                    logging.info('Validation Dice Coeff: {}'.format(val_score))
+
+                logging.info(f'Validation MSE: {val_score}')
+
 
                 # writer.add_images('images', X, global_step)
                 if net.n_classes == 1:
@@ -124,8 +117,22 @@ class UnetTrainer(BaseTrainer):
 
 
     def eval(self,net) -> float:
-        
         super().eval()
-        with torch.no_grad():
-            pass
-        return 
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        net.to(device=device)
+        net.eval()
+        mask_type = torch.float32 if net.n_classes == 1 else torch.long
+        n_val = len(self.val_loader)  # the number of batch
+        losses = [] 
+
+        for X,Y in self.val_loader:
+            imgs, truth = X,Y
+            imgs = imgs.to(device=device, dtype=torch.float32)
+            truth = truth.to(device=device, dtype=mask_type)
+
+            with torch.no_grad():
+                pred = net(imgs)
+            loss = self.criterion(pred, truth)
+            losses.append(loss.item())
+        loss_ave=sum(losses)/len(losses)
+        return loss_ave

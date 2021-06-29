@@ -120,11 +120,8 @@ class BaseTrainer(ABC):
 
         params = {
             "dataset": self.cfg.data.dataset.name,
-            "model": self.cfg.model.name,
             "batch_size": self.cfg.train.batch_size,
             "epochs": self.cfg.train.epochs,
-            "criterion": self.cfg.train.criterion.name,
-            "optimizer": self.cfg.train.optimizer.name,
             "lr": self.cfg.train.optimizer.lr
         }
 
