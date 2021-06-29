@@ -10,7 +10,6 @@ import numpy as np
 from trainers.base_trainer import BaseTrainer
 from torch.utils.data import DataLoader,random_split
 from data.dataset import MnistDataset
-from torch.utils.tensorboard import SummaryWriter
 
 log = logging.getLogger(__name__)
 
@@ -73,6 +72,7 @@ class UnetTrainer(BaseTrainer):
             net.train()
 
             epoch_loss = 0
+            # train
             for X,Y in self.train_loader:
                 assert X.shape[1] == net.n_channels, \
                     f'Network has been defined with {net.n_channels} input channels, ' \
@@ -92,12 +92,18 @@ class UnetTrainer(BaseTrainer):
                 optimizer.step()
 
                 global_step += 1
+            loss_ave = epoch_loss / len(self.train_loader) # average per batch
+            self.loss["train"] = loss_ave 
+            logging.info(f'Train MSE     : {loss_ave}')
+            # val
             if epoch % 1 == 0: # checkpoint interval
                 val_score = self.eval(net)
                 scheduler.step(val_score)
+                self.log_metrics(epoch)
 
 
-                logging.info(f'Validation MSE: {val_score}')
+                
+                
 
 
                 # writer.add_images('images', X, global_step)
@@ -135,4 +141,6 @@ class UnetTrainer(BaseTrainer):
             loss = self.criterion(pred, truth)
             losses.append(loss.item())
         loss_ave=sum(losses)/len(losses)
+        self.loss["val"]=loss_ave
+        logging.info(f'Validation MSE: {loss_ave}')
         return loss_ave

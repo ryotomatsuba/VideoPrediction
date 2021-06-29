@@ -7,6 +7,7 @@ from omegaconf import DictConfig,ListConfig
 from mlflow.tracking import MlflowClient
 import mlflow
 import torch
+from torch.nn.modules import loss
 
 log = logging.getLogger(__name__)
 class MlflowWriter():
@@ -40,11 +41,12 @@ class MlflowWriter():
         with mlflow.start_run(self.run_id):
             torch.log_model(model, 'models')
 
-    def log_params(self, params):
-        self.client.log_params(self.run_id, params)
-
-    def log_metrics(self, metrics):
-        self.client.log_metrics(self.run_id, metrics)
+    def log_params(self, params:dict):
+        for key,value in params.items():
+            self.client.log_param(self.run_id, key, value)
+    def log_metrics(self, metrics:dict):
+        for key,value in metrics.items():
+            self.client.log_metric(self.run_id, key, value)
 
     def log_artifact(self, local_path):
         self.client.log_artifact(self.run_id, local_path)
@@ -71,6 +73,7 @@ class BaseTrainer(ABC):
 
         """
         self.mlwriter=MlflowWriter(cfg.experiment.name,cfg.mlrun_path)
+        self.loss={"train": 0, "val": 0}
         self.cfg = cfg
 
 
@@ -139,3 +142,10 @@ class BaseTrainer(ABC):
         self.mlwriter.log_artifact("train.log")
         self.mlwriter.log_artifact(".hydra/config.yaml")
         self.mlwriter.log_artifact(self.cfg.train.ckpt_path)
+    
+    def log_metrics(self,epoch) -> None:
+        metrics={
+            "train_loss":self.loss["train"],
+            "val_loss":self.loss["val"],
+        }
+        self.mlwriter.log_metrics(metrics)

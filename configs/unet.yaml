@@ -1,6 +1,6 @@
 
 output_dir: Unet
-mlrun_path: /data/${output_dir}/mlruns/
+mlrun_path: /home/data/ryoto/Unet/mlruns/
 experiment:
   name: Default
 
