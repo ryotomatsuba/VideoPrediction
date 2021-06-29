@@ -110,6 +110,7 @@ class UnetTrainer(BaseTrainer):
         epoch_loss = 0 
 
         for X in self.val_loader:
+            X = X.to(device=device, dtype=torch.float32)
             input_num=self.cfg.dataset.input_num
             total_num=X.shape[1]
             for t in range(input_num,total_num):
