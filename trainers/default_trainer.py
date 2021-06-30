@@ -108,7 +108,7 @@ class DefaultTrainer(BaseTrainer):
 
             log.info("Successfully trained the model.")
 
-            self.log_artifacts()
+            self.log_base_artifacts()
 
 
     def eval(self, eval_dataloader: object = None, epoch: int = 0) -> float:

@@ -130,11 +130,15 @@ class BaseTrainer(ABC):
         self.mlwriter.log_params(params)
 
 
-    def log_artifacts(self) -> None:
+    def log_base_artifacts(self) -> None:
         """log artifacts"""
         self.mlwriter.log_artifact(glob.glob(r"*.log")[0])
         self.mlwriter.log_artifact(".hydra/config.yaml")
         self.mlwriter.log_artifact(self.cfg.train.ckpt_path)
+    
+    def log_artifact(self,path) -> None:
+        """log artifacts"""
+        self.mlwriter.log_artifact(path)
     
     def log_metrics(self,epoch) -> None:
         metrics={

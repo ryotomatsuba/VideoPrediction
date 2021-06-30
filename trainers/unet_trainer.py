@@ -98,7 +98,7 @@ class UnetTrainer(BaseTrainer):
                 torch.save(net.state_dict(),self.cfg.train.ckpt_path)
                 self.save_gif(net, epoch)
                 logging.info(f'Checkpoint saved !')
-        self.log_artifacts()
+        self.log_base_artifacts()
 
 
 
@@ -131,7 +131,7 @@ class UnetTrainer(BaseTrainer):
         """
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         net.eval()
-        for phase in ["tarin", "val"]:
+        for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "tarin" else self.val_loader
             X = iter(data_loader).__next__()
             X = X.to(device=device, dtype=torch.float32)
@@ -146,4 +146,4 @@ class UnetTrainer(BaseTrainer):
                 preds=torch.cat((preds,pred),dim=1)
             X, preds = X.to(device="cpu"), preds.to(device="cpu")
             save_gif(X[0], preds[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
-            
+            self.log_artifact(f"pred_{phase}_{epoch}.gif")
