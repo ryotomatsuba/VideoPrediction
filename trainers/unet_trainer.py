@@ -132,7 +132,7 @@ class UnetTrainer(BaseTrainer):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         net.eval()
         for phase in ["train", "val"]:
-            data_loader = self.train_loader if phase == "tarin" else self.val_loader
+            data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
             X = X.to(device=device, dtype=torch.float32)
             input_num = self.cfg.dataset.input_num
