@@ -97,6 +97,7 @@ class UnetTrainer(BaseTrainer):
             if epoch==0 or (epoch > 1 and self.loss["val"][-1] < min(self.loss["val"][:-1])):
                 torch.save(net.state_dict(),self.cfg.train.ckpt_path)
                 self.save_gif(net, epoch)
+                self.log_artifact(self.cfg.train.ckpt_path)
                 logging.info(f'Checkpoint saved !')
         self.log_base_artifacts()
 
@@ -138,12 +139,12 @@ class UnetTrainer(BaseTrainer):
             input_num = self.cfg.dataset.input_num
             batch_size, total_num, height, width=X.shape
             preds=torch.empty(batch_size, 0, height, width).to(device=device)
-
+            input_X = X[:,0:input_num]
             for t in range(input_num,total_num):
                 with torch.no_grad():
-                    pred = net(X[:,t-input_num:t])
-                pred=pred
-                preds=torch.cat((preds,pred),dim=1)
+                    pred = net(input_X)
+                input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
+                preds=torch.cat((preds,pred),dim=1) 
             X, preds = X.to(device="cpu"), preds.to(device="cpu")
             save_gif(X[0], preds[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
             self.log_artifact(f"pred_{phase}_{epoch}.gif")
