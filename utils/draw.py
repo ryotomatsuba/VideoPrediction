@@ -12,6 +12,8 @@ def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 5
         gt_imagesは入力+正解の出力
         pd_imagesは予測の出力のみ
     """
+    gt_images=np.array(gt_images)
+    pd_images=np.array(pd_images)
     vmin=0
     vmax=np.max(gt_images)
     input_length=len(gt_images)-len(pd_images)
