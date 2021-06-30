@@ -2,12 +2,14 @@
 output_dir: Unet
 mlrun_path: /home/data/ryoto/Unet/mlruns/
 experiment:
-  name: Default
-
+  name: Mnist
+dataset: 
+  num_data: 1000
+  input_num: 4
 # Training configs
 train:
-  epochs: 2
-  batch_size: 1
+  epochs: 100
+  batch_size: 8
   save_best_ckpt: True
   num_workers: 2
   ckpt_path: best_ckpt.pth

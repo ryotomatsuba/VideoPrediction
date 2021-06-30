@@ -18,6 +18,7 @@ train:
   save_best_ckpt: True
   num_workers: 2
   eval: False
+  ckpt_path: best_ckpt.pth
   optimizer:
     name: adam
     lr: 0.0001
