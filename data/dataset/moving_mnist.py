@@ -53,14 +53,14 @@ def mv_mnist(num_sample, mnist):
             angles += ang
             trans = cv2.getRotationMatrix2D((20, 20), angles, 1)
             mn = np.zeros((40, 40))
-            mn[6:34, 6:34] = mnist[seeds[i]]
-            da2[t, x2:x2+40, y2:y2+40]  = cv2.warpAffine(mn, trans, (40, 40))
+            mn[6:34, 6:34] = mnist[seeds[i]] # put mnist image on (40,40) canvas
+            da2[t, x2:x2+40, y2:y2+40]  = cv2.warpAffine(mn, trans, (40, 40)) # rotate mnist image
             x_v = x_0v + x_a*t
             y_v = x_0v + y_a*t 
             x += x_v
             y += y_v
             try:
-                da[t, x:x+28, y:y+28] = mnist[seeds[i]+30000]
+                da[t, x:x+28, y:y+28] = mnist[seeds[i]+30000] # put on mnist image
             except:
                 da = np.zeros_like(da)
                 print(i, t, x_start, y_start)
