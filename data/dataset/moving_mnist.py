@@ -10,12 +10,13 @@ from utils.draw import save_gif
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
+import random
 class MnistDataset(Dataset):
     
     def __init__(self,cfg):
-        mnist = np.load("/home/data/ryoto/Datasets/row/mnist.npz")
+        
         num_data=cfg.dataset.num_data
-        self.data = mv_mnist(num_data, mnist['X'].reshape(60000, 28, 28))
+        self.data = mv_mnist(num_data,)
         self.input_num=cfg.dataset.input_num
 
     def __len__(self):
@@ -27,20 +28,29 @@ class MnistDataset(Dataset):
         return X
 
 
-def mv_mnist(num_sample, mnist):
+def mv_mnist(num_sample, choice=["transition", "rotation", "growth_decay"]):
     """
     make moving mnist videos
+    Params:
+    num_sample: number of data
+    choice: which motion to use
     """
-    _, mnist_h, mnist_w = mnist.shape
+    mnist = np.load("/home/data/ryoto/Datasets/row/mnist.npz")['X'].reshape(60000, 28, 28)
+    mnist_num, mnist_h, mnist_w = mnist.shape
     len_seq, output_h, output_w = 10, 128, 128 
     seeds = np.arange(0, num_sample, 1)
     data = np.zeros((num_sample, len_seq, output_h, output_w))
     for i in range(num_sample):
         np.random.seed(seeds[i])
-        transition_mnist=make_transition_movie(mnist[i])
-        rotation_mnist =  make_rotation_movie(mnist[i])
-        growth_decay_mnist = make_growth_decay_movie(mnist[i])
-        data[i] = transition_mnist + rotation_mnist + growth_decay_mnist # overrap videos
+        for j in range(3):
+            motion=random.choice(choice)
+            index=np.random.choice(mnist_num)
+            if motion=="transition":
+                data[i]+=make_transition_movie(mnist[index]) # overrap videos
+            if motion=="rotation":
+                data[i]+=make_rotation_movie(mnist[index]) # overrap videos
+            if motion=="growth_decay":
+                data[i]+=make_growth_decay_movie(mnist[index]) # overrap videos
     return data      
 
 
