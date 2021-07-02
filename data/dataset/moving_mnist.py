@@ -34,10 +34,9 @@ def mv_mnist(num_sample, mnist):
     data = np.zeros((num_sample, len_seq, output_h, output_w))
     for i in range(num_sample):
         np.random.seed(seeds[i])
-        transition_mnist, rotation_mnist = np.zeros((2, len_seq, output_h*2, output_w*2)) # data for transition & rotation
-        growth_decay_mnist = np.zeros((len_seq, output_h, output_w)) # data for c
+        transition_mnist, rotation_mnist, growth_decay_mnist = np.zeros((3, len_seq, output_h*2, output_w*2)) # data for 
         x_rot, y_rot = np.random.randint(64, 128+64-28, size=2) # rotate position
-        x_grow, y_grow = np.random.randint(0, 100, size=2) # growth/decay position
+        x_grow, y_grow = np.random.randint(64, 128+64-28, size=2) # growth/decay position
         x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
         v0_x, v0_y = np.random.randint(-3, 3, size=2)
         a_x, a_y = 0, 0 # no acceraration
@@ -70,13 +69,14 @@ def mv_mnist(num_sample, mnist):
                 da_t = signal.convolve2d(growth_decay_mnist[t], mask, mode = 'same')                
             f = np.fft.fft2(da_t)
             fshift = np.fft.fftshift(f)
-            fshift[128-128//4:128+128//4, 128-128//4:128+128//4] = 0
+            fshift[256-256//4:, 256-256//4:] = 0
             f_ishift = np.fft.ifftshift(fshift)
             img_back = np.fft.ifft2(f_ishift)
             img_back = np.abs(img_back)
             growth_decay_mnist[t] = img_back
         growth_decay_mnist = growth_decay_mnist/(growth_decay_mnist.max())*255
-        data[i] = transition_mnist[:, 64:192, 64:192] + rotation_mnist[:, 64:192, 64:192] + growth_decay_mnist
+        frames = transition_mnist + rotation_mnist + growth_decay_mnist
+        data[i] = frames[:, 64:192, 64:192] # crop center
     return data      
 
 
@@ -88,7 +88,8 @@ class Test(unittest.TestCase):
         self.assertEqual(self.dataset[0].shape,(10,128,128))
         self.assertEqual(len(self.dataset),cfg.dataset.num_data)
         save_gif(self.dataset[0],self.dataset[1])
-    def tearDown(self) -> None:
+
+
 if __name__=="__main__":
     unittest.main()
     
