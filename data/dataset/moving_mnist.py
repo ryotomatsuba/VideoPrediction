@@ -28,6 +28,9 @@ class MnistDataset(Dataset):
 
 
 def mv_mnist(num_sample, mnist):
+    """
+    make moving mnist videos
+    """
     _, mnist_h, mnist_w = mnist.shape
     len_seq, output_h, output_w = 10, 128, 128 
     seeds = np.arange(0, num_sample, 1)
@@ -35,21 +38,20 @@ def mv_mnist(num_sample, mnist):
     for i in range(num_sample):
         np.random.seed(seeds[i])
         transition_mnist=make_transition_movie(mnist[i])
-        rotation_mnist =  make_rotation_movie(mnist[i]) # rotate mnist image
+        rotation_mnist =  make_rotation_movie(mnist[i])
         growth_decay_mnist = make_growth_decay_movie(mnist[i])
-        frames = transition_mnist + rotation_mnist + growth_decay_mnist
-        data[i] = frames[:, 64:192, 64:192] # center crop
+        data[i] = transition_mnist + rotation_mnist + growth_decay_mnist # overrap videos
     return data      
 
 
 def make_rotation_movie(image, len_seq=10, angle_range=30):
     """
     Params: image = mnist image shape (28,28)
-    Return: rotation movie shape(len_seq,256,256)
+    Return: rotation movie shape(len_seq,128,128)
     """
     angles=np.random.randint(-angle_range, angle_range)
-    rotation_movie = np.zeros((len_seq, 256, 256))
-    x, y = np.random.randint(64, 128+64-28, size=2) # rotate center
+    rotation_movie = np.zeros((len_seq, 128, 128))
+    x, y = np.random.randint(0, 128-28, size=2) # rotate center
     for t in range(0, len_seq):
         rotation_matrix = cv2.getRotationMatrix2D((14,14), angles*t, 1)
         rotation_movie[t, x:x+28, y:y+28] = cv2.warpAffine(image, rotation_matrix, (28, 28))
@@ -58,7 +60,7 @@ def make_rotation_movie(image, len_seq=10, angle_range=30):
 def make_transition_movie(image, len_seq=10, v_range=3, a_range=0):
     """
     Params: image = mnist image shape (28,28)
-    Return: transition movie shape(len_seq,256,256)
+    Return: transition movie shape(len_seq,128,128)
     """
     transition_movie = np.zeros((len_seq, 256, 256))
     x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
@@ -75,16 +77,16 @@ def make_transition_movie(image, len_seq=10, v_range=3, a_range=0):
         except:
             transition_movie = np.zeros_like(transition_movie)
             break
-
+    transition_movie=transition_movie[:, 64:192, 64:192] # center crop       
     return transition_movie
 
 def make_growth_decay_movie(image, len_seq=10):
     """
     Params: image = mnist image shape (28,28)
-    Return: growth/decay movie shape(len_seq,256,256)
+    Return: growth/decay movie shape(len_seq,128,128)
     """
-    growth_decay_mnist = np.zeros((len_seq, 256, 256)) # data for growth_decay
-    x_grow, y_grow = np.random.randint(64, 128+64-28, size=2) # growth/decay position
+    growth_decay_mnist = np.zeros((len_seq, 128, 128)) # data for growth_decay
+    x_grow, y_grow = np.random.randint(0, 128-28, size=2) # growth/decay position
     mask = np.random.rand(1).reshape(1, 1) 
     mask /= np.sum(mask) if np.sum(mask)!=0 else mask
     mask = (1 + np.random.uniform(-0.5, 0.5)) * mask
@@ -97,7 +99,7 @@ def make_growth_decay_movie(image, len_seq=10):
             da_t = signal.convolve2d(growth_decay_mnist[t], mask, mode = 'same')                
         f = np.fft.fft2(da_t)
         fshift = np.fft.fftshift(f)
-        fshift[256-256//4:, 256-256//4:] = 0
+        fshift[128*3//4:, 128*3//4:] = 0
         f_ishift = np.fft.ifftshift(fshift)
         img_back = np.fft.ifft2(f_ishift)
         img_back = np.abs(img_back)
