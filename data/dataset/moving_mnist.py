@@ -36,23 +36,16 @@ def mv_mnist(num_sample, mnist):
         np.random.seed(seeds[i])
         transition_mnist, rotation_mnist, growth_decay_mnist = np.zeros((3, len_seq, output_h*2, output_w*2)) # data for 
         x_rot, y_rot = np.random.randint(64, 128+64-28, size=2) # rotate position
+        rotation_mnist[:, x_rot:x_rot+40, y_rot:y_rot+40]  =  make_rotation_movie(mnist[i]) # rotate mnist image
         x_grow, y_grow = np.random.randint(64, 128+64-28, size=2) # growth/decay position
         x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
         v0_x, v0_y = np.random.randint(-3, 3, size=2)
-        a_x, a_y = 0, 0 # no acceraration
-        ang_0 = np.random.randint(-6, 6)
-        a_ang = int(np.random.normal()*0.1)     
+        a_x, a_y = 0, 0 # no acceraration    
         mask = np.random.rand(1).reshape(1, 1) 
         mask /= np.sum(mask) if np.sum(mask)!=0 else mask
         mask = (1 + np.random.uniform(-0.5, 0.5)) * mask
         growth_decay_mnist[0, y_grow:y_grow+28, x_grow:x_grow+28] = mnist[seeds[i]+20000]
-        for t in range(len_seq):
-            # rotation processing
-            angles = ang_0*t + a_ang*t**2
-            rotation_matrix = cv2.getRotationMatrix2D((20, 20), angles, 1)
-            mn = np.zeros((40, 40))
-            mn[6:34, 6:34] = mnist[seeds[i]] # put mnist image on (40,40) canvas
-            rotation_mnist[t, x_rot:x_rot+40, y_rot:y_rot+40]  = cv2.warpAffine(mn, rotation_matrix, (40, 40)) # rotate mnist image
+        for t in range(len_seq):        
             # trainsition processing
             x = x_trans + v0_x*t + a_x*t**2
             y = y_trans + v0_y*t + a_y*t**2
@@ -79,6 +72,27 @@ def mv_mnist(num_sample, mnist):
         data[i] = frames[:, 64:192, 64:192] # crop center
     return data      
 
+def rotate_image(image, angles):
+    """
+    Params: image np.array
+    Returns: rotated image np.array
+    """
+    height, width = image.shape
+    rotation_matrix = cv2.getRotationMatrix2D((height/2, width//2), angles, 1)
+    rotated_image = cv2.warpAffine(image, rotation_matrix, (height, width))
+    return rotated_image
+
+def make_rotation_movie(image, len_seq=10, angle_range=10):
+    """
+    Params: image = mnist image shape (28,28)
+    Return: rotation movie shape(len_seq,40,40)
+    """
+    angles=np.random.randint(-angle_range, angle_range)
+    rotation_movie = np.zeros((len_seq, 40, 40))
+    rotation_movie[0, 6:34, 6:34] = image # put image on (40,40) canvas
+    for t in range(1, len_seq):
+        rotation_movie[t] = rotate_image(rotation_movie[t-1],angles)
+    return rotation_movie
 
 class Test(unittest.TestCase):
     def test(self):
