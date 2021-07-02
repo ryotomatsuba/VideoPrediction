@@ -36,28 +36,9 @@ def mv_mnist(num_sample, mnist):
         np.random.seed(seeds[i])
         transition_mnist=make_transition_movie(mnist[i])
         rotation_mnist =  make_rotation_movie(mnist[i]) # rotate mnist image
-        growth_decay_mnist = np.zeros((len_seq, output_h*2, output_w*2)) # data for growth_decay
-        x_grow, y_grow = np.random.randint(64, 128+64-28, size=2) # growth/decay position
-        mask = np.random.rand(1).reshape(1, 1) 
-        mask /= np.sum(mask) if np.sum(mask)!=0 else mask
-        mask = (1 + np.random.uniform(-0.5, 0.5)) * mask
-        growth_decay_mnist[0, y_grow:y_grow+28, x_grow:x_grow+28] = mnist[seeds[i]+20000]
-        for t in range(len_seq):        
-            # growth and decay processing
-            if t>0:
-                da_t = signal.convolve2d(growth_decay_mnist[t-1], mask, mode = 'same')
-            else:
-                da_t = signal.convolve2d(growth_decay_mnist[t], mask, mode = 'same')                
-            f = np.fft.fft2(da_t)
-            fshift = np.fft.fftshift(f)
-            fshift[256-256//4:, 256-256//4:] = 0
-            f_ishift = np.fft.ifftshift(fshift)
-            img_back = np.fft.ifft2(f_ishift)
-            img_back = np.abs(img_back)
-            growth_decay_mnist[t] = img_back
-        growth_decay_mnist = growth_decay_mnist/(growth_decay_mnist.max())*255
+        growth_decay_mnist = make_growth_decay_movie(mnist[i])
         frames = transition_mnist + rotation_mnist + growth_decay_mnist
-        data[i] = frames[:, 64:192, 64:192] # crop center
+        data[i] = frames[:, 64:192, 64:192] # center crop
     return data      
 
 
@@ -77,7 +58,7 @@ def make_rotation_movie(image, len_seq=10, angle_range=30):
 def make_transition_movie(image, len_seq=10, v_range=3, a_range=0):
     """
     Params: image = mnist image shape (28,28)
-    Return: rotation movie shape(len_seq,256,256)
+    Return: transition movie shape(len_seq,256,256)
     """
     transition_movie = np.zeros((len_seq, 256, 256))
     x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
@@ -96,6 +77,33 @@ def make_transition_movie(image, len_seq=10, v_range=3, a_range=0):
             break
 
     return transition_movie
+
+def make_growth_decay_movie(image, len_seq=10):
+    """
+    Params: image = mnist image shape (28,28)
+    Return: growth/decay movie shape(len_seq,256,256)
+    """
+    growth_decay_mnist = np.zeros((len_seq, 256, 256)) # data for growth_decay
+    x_grow, y_grow = np.random.randint(64, 128+64-28, size=2) # growth/decay position
+    mask = np.random.rand(1).reshape(1, 1) 
+    mask /= np.sum(mask) if np.sum(mask)!=0 else mask
+    mask = (1 + np.random.uniform(-0.5, 0.5)) * mask
+    growth_decay_mnist[0, y_grow:y_grow+28, x_grow:x_grow+28] = image
+    for t in range(len_seq):        
+        # growth and decay processing
+        if t>0:
+            da_t = signal.convolve2d(growth_decay_mnist[t-1], mask, mode = 'same')
+        else:
+            da_t = signal.convolve2d(growth_decay_mnist[t], mask, mode = 'same')                
+        f = np.fft.fft2(da_t)
+        fshift = np.fft.fftshift(f)
+        fshift[256-256//4:, 256-256//4:] = 0
+        f_ishift = np.fft.ifftshift(fshift)
+        img_back = np.fft.ifft2(f_ishift)
+        img_back = np.abs(img_back)
+        growth_decay_mnist[t] = img_back
+    return  growth_decay_mnist/(growth_decay_mnist.max())*255
+
 class Test(unittest.TestCase):
     def test(self):
         cfg={"dataset":{"num_data":10,"input_num":4}}
