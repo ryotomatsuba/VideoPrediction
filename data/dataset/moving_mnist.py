@@ -34,27 +34,15 @@ def mv_mnist(num_sample, mnist):
     data = np.zeros((num_sample, len_seq, output_h, output_w))
     for i in range(num_sample):
         np.random.seed(seeds[i])
-        transition_mnist, rotation_mnist, growth_decay_mnist = np.zeros((3, len_seq, output_h*2, output_w*2)) # data for 
-        x_rot, y_rot = np.random.randint(64, 128+64-28, size=2) # rotate position
-        rotation_mnist[:, x_rot:x_rot+40, y_rot:y_rot+40]  =  make_rotation_movie(mnist[i]) # rotate mnist image
+        transition_mnist=make_transition_movie(mnist[i])
+        rotation_mnist =  make_rotation_movie(mnist[i]) # rotate mnist image
+        growth_decay_mnist = np.zeros((len_seq, output_h*2, output_w*2)) # data for growth_decay
         x_grow, y_grow = np.random.randint(64, 128+64-28, size=2) # growth/decay position
-        x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
-        v0_x, v0_y = np.random.randint(-3, 3, size=2)
-        a_x, a_y = 0, 0 # no acceraration    
         mask = np.random.rand(1).reshape(1, 1) 
         mask /= np.sum(mask) if np.sum(mask)!=0 else mask
         mask = (1 + np.random.uniform(-0.5, 0.5)) * mask
         growth_decay_mnist[0, y_grow:y_grow+28, x_grow:x_grow+28] = mnist[seeds[i]+20000]
         for t in range(len_seq):        
-            # trainsition processing
-            x = x_trans + v0_x*t + a_x*t**2
-            y = y_trans + v0_y*t + a_y*t**2
-            try:
-                transition_mnist[t, x:x+28, y:y+28] = mnist[seeds[i]+30000] # put on mnist image
-            except:
-                transition_mnist = np.zeros_like(transition_mnist)
-                print(i, t, x_trans, y_trans)
-                break
             # growth and decay processing
             if t>0:
                 da_t = signal.convolve2d(growth_decay_mnist[t-1], mask, mode = 'same')
@@ -72,28 +60,42 @@ def mv_mnist(num_sample, mnist):
         data[i] = frames[:, 64:192, 64:192] # crop center
     return data      
 
-def rotate_image(image, angles):
-    """
-    Params: image np.array
-    Returns: rotated image np.array
-    """
-    height, width = image.shape
-    rotation_matrix = cv2.getRotationMatrix2D((height/2, width//2), angles, 1)
-    rotated_image = cv2.warpAffine(image, rotation_matrix, (height, width))
-    return rotated_image
 
-def make_rotation_movie(image, len_seq=10, angle_range=10):
+def make_rotation_movie(image, len_seq=10, angle_range=30):
     """
     Params: image = mnist image shape (28,28)
-    Return: rotation movie shape(len_seq,40,40)
+    Return: rotation movie shape(len_seq,256,256)
     """
     angles=np.random.randint(-angle_range, angle_range)
-    rotation_movie = np.zeros((len_seq, 40, 40))
-    rotation_movie[0, 6:34, 6:34] = image # put image on (40,40) canvas
-    for t in range(1, len_seq):
-        rotation_movie[t] = rotate_image(rotation_movie[t-1],angles)
+    rotation_movie = np.zeros((len_seq, 256, 256))
+    x, y = np.random.randint(64, 128+64-28, size=2) # rotate center
+    for t in range(0, len_seq):
+        rotation_matrix = cv2.getRotationMatrix2D((14,14), angles*t, 1)
+        rotation_movie[t, x:x+28, y:y+28] = cv2.warpAffine(image, rotation_matrix, (28, 28))
     return rotation_movie
 
+def make_transition_movie(image, len_seq=10, v_range=3, a_range=0):
+    """
+    Params: image = mnist image shape (28,28)
+    Return: rotation movie shape(len_seq,256,256)
+    """
+    transition_movie = np.zeros((len_seq, 256, 256))
+    x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
+    v_x, v_y = np.random.randint(-v_range, v_range, size=2)
+    if a_range:
+        a_x, a_y = np.random.randint(-a_range, a_range, size=2)
+    else:
+        a_x, a_y = 0, 0
+    for t in range(len_seq):
+        x = x_trans + v_x*t + a_x*t**2
+        y = y_trans + v_y*t + a_y*t**2
+        try:
+            transition_movie[t, x:x+28, y:y+28] = image # put on mnist image
+        except:
+            transition_movie = np.zeros_like(transition_movie)
+            break
+
+    return transition_movie
 class Test(unittest.TestCase):
     def test(self):
         cfg={"dataset":{"num_data":10,"input_num":4}}
