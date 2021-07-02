@@ -16,7 +16,7 @@ class MnistDataset(Dataset):
     def __init__(self,cfg):
         
         num_data=cfg.dataset.num_data
-        self.data = mv_mnist(num_data,)
+        self.data = mv_mnist(num_data,cfg.dataset.motions)
         self.input_num=cfg.dataset.input_num
 
     def __len__(self):
@@ -33,7 +33,7 @@ def mv_mnist(num_sample, choice=["transition", "rotation", "growth_decay"]):
     make moving mnist videos
     Params:
     num_sample: number of data
-    choice: which motion to use
+    choice: which motion to use (transition, rotation, growth_decay)
     """
     mnist = np.load("/home/data/ryoto/Datasets/row/mnist.npz")['X'].reshape(60000, 28, 28)
     mnist_num, mnist_h, mnist_w = mnist.shape
