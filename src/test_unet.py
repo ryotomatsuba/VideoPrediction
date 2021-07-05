@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-
+import time
 import torch
 import hydra
 from omegaconf import DictConfig
@@ -33,14 +33,17 @@ def test(cfg):
     preds = torch.empty(batch_size, 0, height, width).to(device=device)
     input_X = X[:,0:input_num]
     for t in range(input_num,total_num):
+        start = time.time()
         with torch.no_grad():
             pred = net(input_X)
+        elapsed_time = time.time() - start
+        logging.info(f"elapsed_time:{elapsed_time}[sec]")
         input_X = torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
         preds = torch.cat((preds,pred),dim=1) 
     X, preds = X.to(device="cpu"), preds.to(device="cpu")
     for i in range(cfg.test.batch_size):
         save_gif(X[i], preds[i], save_path = f"pred_test_{i}.gif", suptitle=f"test")
-        logging.info(f'gif saved to {hydra.utils.to_absolute_path("pred_test_{i}.gif")}')
+        logging.info(f'gif saved to {hydra.utils.to_absolute_path(f"pred_test_{i}.gif")}')
 
 
 @hydra.main(config_path="../configs", config_name="unet")
