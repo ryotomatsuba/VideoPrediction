@@ -23,7 +23,7 @@ train:
 
 # Model configs
 model:
-  load: "/home/data/ryoto/Unet/mlruns/2/8b1d801db6d446b38c22406249238730/artifacts/best_ckpt.pth" # Load model from a .pth file
+  load: "/home/data/ryoto/Unet/mlruns/2/e8ab44a681604eb9aaac31c6a4b26bfd/artifacts/best_ckpt.pth" # Load model from a .pth file
 test:
   batch_size: 8
   device: cuda:1
