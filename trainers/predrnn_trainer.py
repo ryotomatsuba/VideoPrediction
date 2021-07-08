@@ -169,93 +169,93 @@ class PredRNNTrainer(BaseTrainer):
             self.log_artifact(f"pred_{phase}_{epoch}.gif")
 
     def reserve_schedule_sampling_exp(self, itr):
-        if itr < args.r_sampling_step_1:
+        if itr < self.cfg.sampling.r_sampling_step_1:
             r_eta = 0.5
-        elif itr < args.r_sampling_step_2:
-            r_eta = 1.0 - 0.5 * math.exp(-float(itr - args.r_sampling_step_1) / args.r_exp_alpha)
+        elif itr < self.cfg.sampling.r_sampling_step_2:
+            r_eta = 1.0 - 0.5 * math.exp(-float(itr - self.cfg.sampling.r_sampling_step_1) / args.r_exp_alpha)
         else:
             r_eta = 1.0
 
-        if itr < args.r_sampling_step_1:
+        if itr < self.cfg.sampling.r_sampling_step_1:
             eta = 0.5
-        elif itr < args.r_sampling_step_2:
-            eta = 0.5 - (0.5 / (args.r_sampling_step_2 - args.r_sampling_step_1)) * (itr - args.r_sampling_step_1)
+        elif itr < self.cfg.sampling.r_sampling_step_2:
+            eta = 0.5 - (0.5 / (self.cfg.sampling.r_sampling_step_2 - self.cfg.sampling.r_sampling_step_1)) * (itr - self.cfg.sampling.r_sampling_step_1)
         else:
             eta = 0.0
 
         r_random_flip = np.random.random_sample(
-            (args.batch_size, args.input_length - 1))
+            (self.cfg.train.batch_size, self.cfg.dataset.len_seq - 1))
         r_true_token = (r_random_flip < r_eta)
 
         random_flip = np.random.random_sample(
-            (args.batch_size, args.total_length - args.input_length - 1))
+            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1))
         true_token = (random_flip < eta)
 
-        ones = np.ones((args.img_width // args.patch_size,
-                        args.img_width // args.patch_size,
-                        args.patch_size ** 2 * args.img_channel))
-        zeros = np.zeros((args.img_width // args.patch_size,
-                        args.img_width // args.patch_size,
-                        args.patch_size ** 2 * args.img_channel))
+        ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
+        zeros = np.zeros((self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
 
         real_input_flag = []
-        for i in range(args.batch_size):
-            for j in range(args.total_length - 2):
-                if j < args.input_length - 1:
+        for i in range(self.cfg.train.batch_size):
+            for j in range(self.cfg.dataset.num_data - 2):
+                if j < self.cfg.dataset.len_seq - 1:
                     if r_true_token[i, j]:
                         real_input_flag.append(ones)
                     else:
                         real_input_flag.append(zeros)
                 else:
-                    if true_token[i, j - (args.input_length - 1)]:
+                    if true_token[i, j - (self.cfg.dataset.len_seq - 1)]:
                         real_input_flag.append(ones)
                     else:
                         real_input_flag.append(zeros)
 
         real_input_flag = np.array(real_input_flag)
         real_input_flag = np.reshape(real_input_flag,
-                                    (args.batch_size,
-                                    args.total_length - 2,
-                                    args.img_width // args.patch_size,
-                                    args.img_width // args.patch_size,
-                                    args.patch_size ** 2 * args.img_channel))
+                                    (self.cfg.train.batch_size,
+                                    self.cfg.dataset.num_data - 2,
+                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                                    self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
         return real_input_flag
 
 
     def schedule_sampling(self, eta, itr):
-        zeros = np.zeros((args.batch_size,
-                        args.total_length - args.input_length - 1,
-                        args.img_width // args.patch_size,
-                        args.img_width // args.patch_size,
-                        args.patch_size ** 2 * args.img_channel))
-        if not args.scheduled_sampling:
+        zeros = np.zeros((self.cfg.train.batch_size,
+                        self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1,
+                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
+        if not self.cfg.sampling.scheduled_sampling:
             return 0.0, zeros
 
-        if itr < args.sampling_stop_iter:
-            eta -= args.sampling_changing_rate
+        if itr < self.cfg.sampling.sampling_stop_iter:
+            eta -= self.cfg.sampling.sampling_changing_rate
         else:
             eta = 0.0
         random_flip = np.random.random_sample(
-            (args.batch_size, args.total_length - args.input_length - 1))
+            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1))
         true_token = (random_flip < eta)
-        ones = np.ones((args.img_width // args.patch_size,
-                        args.img_width // args.patch_size,
-                        args.patch_size ** 2 * args.img_channel))
-        zeros = np.zeros((args.img_width // args.patch_size,
-                        args.img_width // args.patch_size,
-                        args.patch_size ** 2 * args.img_channel))
+        ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
+        zeros = np.zeros((self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
         real_input_flag = []
-        for i in range(args.batch_size):
-            for j in range(args.total_length - args.input_length - 1):
+        for i in range(self.cfg.train.batch_size):
+            for j in range(self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1):
                 if true_token[i, j]:
                     real_input_flag.append(ones)
                 else:
                     real_input_flag.append(zeros)
         real_input_flag = np.array(real_input_flag)
         real_input_flag = np.reshape(real_input_flag,
-                                    (args.batch_size,
-                                    args.total_length - args.input_length - 1,
-                                    args.img_width // args.patch_size,
-                                    args.img_width // args.patch_size,
-                                    args.patch_size ** 2 * args.img_channel))
+                                    (self.cfg.train.batch_size,
+                                    self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1,
+                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
+                                    self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
         return eta, real_input_flag
