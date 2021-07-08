@@ -2,7 +2,8 @@
 
 num_data: 20
 len_seq: 10
-input_num: 4
+img_width: 128
+img_channel: 1
 motions: # motion to use (transition, rotation, growth_decay)
   - transition
   - rotation
