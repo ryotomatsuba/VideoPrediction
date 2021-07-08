@@ -13,6 +13,7 @@ from torch import optim
 from models.predrnn.utils import preprocess
 log = logging.getLogger(__name__)
 import numpy as np
+import math
 
 class PredRNNTrainer(BaseTrainer):
     """DefaultTrainer
@@ -186,12 +187,12 @@ class PredRNNTrainer(BaseTrainer):
             mask_tensor = torch.FloatTensor(real_input_flag).to(device)
 
             img_gen, loss= self.net(X, mask_tensor)
-
+            img_gen = img_gen.detach().cpu().numpy() 
             img_gen = preprocess.reshape_patch_back(img_gen, self.cfg.model.patch_size)
             output_length = self.cfg.dataset.len_seq - self.cfg.model.input_num
             img_out = img_gen[:, -output_length:]
-
-            X, img_out = X.to(device="cpu"), img_out.to(device="cpu")
+            X = X.detach().cpu().numpy()
+            X = preprocess.reshape_patch_back(X, self.cfg.model.patch_size)
             save_gif(X[0], img_out[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
             self.log_artifact(f"pred_{phase}_{epoch}.gif")
 
