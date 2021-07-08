@@ -48,7 +48,7 @@ class PredRNN(nn.Module):
 
         memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(self.cfg.train.device)
 
-        for t in range(self.cfg.dataset.total_length - 1):
+        for t in range(self.cfg.dataset.len_seq - 1):
             # reverse schedule sampling
             if self.cfg.sampling.reverse_scheduled_sampling == 1:
                 if t == 0:
