@@ -66,12 +66,11 @@ class PredRNNTrainer(BaseTrainer):
         device = next(self.net.parameters()).device
 
 
-        global_step = 0
+        iteration = 0
 
         logging.info('Starting training')
 
         optimizer = optim.Adam(self.net.parameters(), lr=lr,)
-
         for epoch in range(epochs):
 
             logging.info(f'epoch: {epoch}')
@@ -81,28 +80,23 @@ class PredRNNTrainer(BaseTrainer):
             eta = self.cfg.sampling.sampling_start_value
             # train
             for X in self.train_loader:
-                X = X.to(device=device, dtype=torch.float32)
                 X=preprocess.reshape_patch(X, self.cfg.model.patch_size)
+                X = X.to(device=device, dtype=torch.float32)
                 if self.cfg.sampling.reverse_scheduled_sampling == 1:
-                    real_input_flag = self.reserve_schedule_sampling_exp(itr)
+                    real_input_flag = self.reserve_schedule_sampling_exp(iteration)
                 else:
-                    eta, real_input_flag = self.schedule_sampling(eta, itr)
+                    eta, real_input_flag = self.schedule_sampling(eta, iteration)
 
                 mask_tensor = torch.FloatTensor(real_input_flag).to(device)
 
-         
-
-                input_num=self.cfg.dataset.input_num
-                total_num=X.shape[1]
-
                 
                 optimizer.zero_grad()
-                next_frames, loss = self.network(X, mask_tensor)
+                next_frames, loss = self.net(X, mask_tensor)
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
                 optimizer.step()
-                global_step += 1
+                iteration += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
             logging.info(f'Train MSE     : {loss_ave}')
@@ -131,7 +125,7 @@ class PredRNNTrainer(BaseTrainer):
 
         for X in self.val_loader:
             X = X.to(device=device, dtype=torch.float32)
-            input_num=self.cfg.dataset.input_num
+            input_num=self.cfg.model.input_num
             total_num=X.shape[1]
             for t in range(input_num,total_num):
                 with torch.no_grad():
@@ -155,7 +149,7 @@ class PredRNNTrainer(BaseTrainer):
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
             X = X.to(device=device, dtype=torch.float32)
-            input_num = self.cfg.dataset.input_num
+            input_num = self.cfg.model.input_num
             batch_size, total_num, height, width=X.shape
             preds=torch.empty(batch_size, 0, height, width).to(device=device)
             input_X = X[:,0:input_num]
