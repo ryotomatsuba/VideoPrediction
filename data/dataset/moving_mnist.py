@@ -12,11 +12,14 @@ from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 import random
 class MnistDataset(Dataset):
+    """
+    Moving Mnist Dataset
+    """
     
     def __init__(self,cfg):
         
         num_data=cfg.dataset.num_data
-        self.data = mv_mnist(num_data,cfg.dataset.motions)
+        self.data = mv_mnist(num_data,cfg.dataset.len_seq,cfg.dataset.motions)
         self.input_num=cfg.dataset.input_num
 
     def __len__(self):
@@ -28,7 +31,7 @@ class MnistDataset(Dataset):
         return X
 
 
-def mv_mnist(num_sample, choice=["transition", "rotation", "growth_decay"]):
+def mv_mnist(num_sample, len_seq=10, choice=["transition", "rotation", "growth_decay"]):
     """
     make moving mnist videos
     Params:
@@ -37,7 +40,7 @@ def mv_mnist(num_sample, choice=["transition", "rotation", "growth_decay"]):
     """
     mnist = np.load("/home/data/ryoto/Datasets/row/mnist.npz")['X'].reshape(60000, 28, 28)
     mnist_num, mnist_h, mnist_w = mnist.shape
-    len_seq, output_h, output_w = 10, 128, 128 
+    output_h, output_w = 128, 128 
     seeds = np.arange(0, num_sample, 1)
     data = np.zeros((num_sample, len_seq, output_h, output_w))
     for i in range(num_sample):
@@ -46,11 +49,11 @@ def mv_mnist(num_sample, choice=["transition", "rotation", "growth_decay"]):
             motion=random.choice(choice)
             index=np.random.choice(mnist_num)
             if motion=="transition":
-                data[i]+=make_transition_movie(mnist[index]) # overrap videos
+                data[i]+=make_transition_movie(mnist[index], len_seq=len_seq) # overrap videos
             if motion=="rotation":
-                data[i]+=make_rotation_movie(mnist[index]) # overrap videos
+                data[i]+=make_rotation_movie(mnist[index], len_seq=len_seq) # overrap videos
             if motion=="growth_decay":
-                data[i]+=make_growth_decay_movie(mnist[index]) # overrap videos
+                data[i]+=make_growth_decay_movie(mnist[index], len_seq=len_seq) # overrap videos
     return data      
 
 
@@ -118,10 +121,17 @@ def make_growth_decay_movie(image, len_seq=10):
 
 class Test(unittest.TestCase):
     def test(self):
-        cfg={"dataset":{"num_data":10,"input_num":4}}
+        cfg={
+            "dataset":{
+                "num_data":10,
+                "len_seq": 20,
+                "input_num":4,
+                "motions":["transition", "rotation", "growth_decay"]
+            }
+        }
         cfg=DictConfig(cfg)
         self.dataset=MnistDataset(cfg)
-        self.assertEqual(self.dataset[0].shape,(10,128,128))
+        self.assertEqual(self.dataset[0].shape,(cfg.dataset.len_seq,128,128))
         self.assertEqual(len(self.dataset),cfg.dataset.num_data)
         save_gif(self.dataset[0],self.dataset[1])
 
