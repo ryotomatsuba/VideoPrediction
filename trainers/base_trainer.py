@@ -121,13 +121,8 @@ class BaseTrainer(ABC):
 
     def log_params(self) -> None:
         """Log parameters"""
-        params = {
-            "batch_size": self.cfg.train.batch_size,
-            "epochs": self.cfg.train.epochs,
-            "lr": self.cfg.train.lr
-        }
-
-        self.mlwriter.log_params(params)
+        
+        self.mlwriter.log_params_from_omegaconf_dict(self.cfg)
         self.mlwriter.log_artifact(".hydra/config.yaml")
 
 
