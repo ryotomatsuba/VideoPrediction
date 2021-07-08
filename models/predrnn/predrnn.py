@@ -6,26 +6,26 @@ from .SpatioTemporalLSTMCell import SpatioTemporalLSTMCell
 
 
 class PredRNN(nn.Module):
-    def __init__(self, num_layers, num_hidden, configs):
+    def __init__(self,cfg):
         super(PredRNN, self).__init__()
 
-        self.configs = configs
-        self.frame_channel = configs.patch_size * configs.patch_size * configs.img_channel
-        self.num_layers = num_layers
-        self.num_hidden = num_hidden
+        self.cfg = cfg
+        self.frame_channel = cfg.model.patch_size * cfg.model.patch_size * cfg.dataset.img_channel
+        self.num_hidden = cfg.model.num_hidden
+        self.num_layers = len(self.num_hidden)
         cell_list = []
 
-        width = configs.img_width // configs.patch_size
+        width = cfg.dataset.img_width // cfg.model.patch_size
         self.MSE_criterion = nn.MSELoss()
 
-        for i in range(num_layers):
-            in_channel = self.frame_channel if i == 0 else num_hidden[i - 1]
+        for i in range(self.num_layers):
+            in_channel = self.frame_channel if i == 0 else self.num_hidden[i - 1]
             cell_list.append(
-                SpatioTemporalLSTMCell(in_channel, num_hidden[i], width, configs.filter_size,
-                                       configs.stride, configs.layer_norm)
+                SpatioTemporalLSTMCell(in_channel, self.num_hidden[i], width, cfg.model.filter_size,
+                                       cfg.model.stride, cfg.model.layer_norm)
             )
         self.cell_list = nn.ModuleList(cell_list)
-        self.conv_last = nn.Conv2d(num_hidden[num_layers - 1], self.frame_channel,
+        self.conv_last = nn.Conv2d(self.num_hidden[self.num_layers - 1], self.frame_channel,
                                    kernel_size=1, stride=1, padding=0, bias=False)
 
     def forward(self, frames_tensor, mask_true):
@@ -42,25 +42,25 @@ class PredRNN(nn.Module):
         c_t = []
 
         for i in range(self.num_layers):
-            zeros = torch.zeros([batch, self.num_hidden[i], height, width]).to(self.configs.device)
+            zeros = torch.zeros([batch, self.num_hidden[i], height, width]).to(self.cfg.train.device)
             h_t.append(zeros)
             c_t.append(zeros)
 
-        memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(self.configs.device)
+        memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(self.cfg.train.device)
 
-        for t in range(self.configs.total_length - 1):
+        for t in range(self.cfg.dataset.total_length - 1):
             # reverse schedule sampling
-            if self.configs.reverse_scheduled_sampling == 1:
+            if self.cfg.sampling.reverse_scheduled_sampling == 1:
                 if t == 0:
                     net = frames[:, t]
                 else:
                     net = mask_true[:, t - 1] * frames[:, t] + (1 - mask_true[:, t - 1]) * x_gen
             else:
-                if t < self.configs.input_length:
+                if t < self.cfg.model.input_num:
                     net = frames[:, t]
                 else:
-                    net = mask_true[:, t - self.configs.input_length] * frames[:, t] + \
-                          (1 - mask_true[:, t - self.configs.input_length]) * x_gen
+                    net = mask_true[:, t - self.cfg.model.input_num] * frames[:, t] + \
+                          (1 - mask_true[:, t - self.cfg.model.input_num]) * x_gen
 
             h_t[0], c_t[0], memory = self.cell_list[0](net, h_t[0], c_t[0], memory)
 
