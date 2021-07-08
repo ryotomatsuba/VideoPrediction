@@ -20,6 +20,7 @@ class MnistDataset(Dataset):
         
         num_data=cfg.dataset.num_data
         self.data = mv_mnist(num_data,cfg.dataset.len_seq,cfg.dataset.motions)
+        self.data *= cfg.dataset.max_intensity/255
 
     def __len__(self):
         return len(self.data)
@@ -123,7 +124,8 @@ class Test(unittest.TestCase):
         cfg={
             "dataset":{
                 "num_data":10,
-                "len_seq": 20,
+                "len_seq": 5,
+                "max_intensity": 1,
                 "motions":["transition", "rotation", "growth_decay"]
             }
         }
