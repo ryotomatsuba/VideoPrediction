@@ -128,12 +128,12 @@ class BaseTrainer(ABC):
         }
 
         self.mlwriter.log_params(params)
+        self.mlwriter.log_artifact(".hydra/config.yaml")
 
 
     def log_base_artifacts(self) -> None:
         """log artifacts"""
         self.mlwriter.log_artifact(glob.glob(r"*.log")[0])
-        self.mlwriter.log_artifact(".hydra/config.yaml")
         self.mlwriter.log_artifact(self.cfg.train.ckpt_path)
     
     def log_artifact(self,path) -> None:
