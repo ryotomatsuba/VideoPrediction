@@ -88,14 +88,11 @@ class PredRNNTrainer(BaseTrainer):
                     eta, real_input_flag = self.schedule_sampling(eta, iteration)
 
                 mask_tensor = torch.FloatTensor(real_input_flag).to(device)
-
-                
                 optimizer.zero_grad()
                 next_frames, loss = self.net(X, mask_tensor)
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
-                optimizer.step()
                 iteration += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
