@@ -119,16 +119,35 @@ class PredRNNTrainer(BaseTrainer):
 
         self.net.eval()
         epoch_loss = 0 
+        # reverse schedule sampling
+        if self.cfg.sampling.reverse_scheduled_sampling == 1:
+            mask_input = 1
+        else:
+            mask_input = self.cfg.sampling.reverse_scheduled_sampling
 
-        for X in self.val_loader:
-            X = X.to(device=device, dtype=torch.float32)
-            input_num=self.cfg.model.input_num
-            total_num=X.shape[1]
-            for t in range(input_num,total_num):
-                with torch.no_grad():
-                    pred = self.net(X[:,t-input_num:t])
-                loss = self.criterion(pred, X[:,[t]])
-                epoch_loss += loss.item()
+        real_input_flag = np.zeros(
+            (self.cfg.train.batch_size,
+            self.cfg.dataset.len_seq - mask_input - 1,
+            self.cfg.dataset.img_width // self.cfg.model.patch_size,
+            self.cfg.dataset.img_width // self.cfg.model.patch_size,
+            self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
+
+        if self.cfg.sampling.reverse_scheduled_sampling == 1:
+            real_input_flag[:, :self.cfg.model.input_num - 1, :, :] = 1.0
+
+        for X in self.val_loader:    
+            X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
+            X = torch.FloatTensor(X).to(device)
+            mask_tensor = torch.FloatTensor(real_input_flag).to(device)
+
+            img_gen, loss= self.net(X, mask_tensor)
+            img_gen = img_gen.detach().cpu().numpy() 
+            img_gen = preprocess.reshape_patch_back(img_gen, self.cfg.model.patch_size)
+            output_length = self.cfg.dataset.len_seq - self.cfg.model.input_num
+            img_gen_length = img_gen.shape[1]
+            img_out = img_gen[:, -output_length:]
+
+            epoch_loss += loss.item()
 
 
         loss_ave=epoch_loss/len(self.val_loader)
@@ -142,21 +161,38 @@ class PredRNNTrainer(BaseTrainer):
         """
         device = next(self.net.parameters()).device
         self.net.eval()
+        if self.cfg.sampling.reverse_scheduled_sampling == 1:
+            mask_input = 1
+        else:
+            mask_input = self.cfg.sampling.reverse_scheduled_sampling
+
+        real_input_flag = np.zeros(
+            (self.cfg.train.batch_size,
+            self.cfg.dataset.len_seq - mask_input - 1,
+            self.cfg.dataset.img_width // self.cfg.model.patch_size,
+            self.cfg.dataset.img_width // self.cfg.model.patch_size,
+            self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
+
+        if self.cfg.sampling.reverse_scheduled_sampling == 1:
+            real_input_flag[:, :self.cfg.model.input_num - 1, :, :] = 1.0
+
         for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
-            X = X.to(device=device, dtype=torch.float32)
             input_num = self.cfg.model.input_num
             batch_size, total_num, height, width=X.shape
-            preds=torch.empty(batch_size, 0, height, width).to(device=device)
-            input_X = X[:,0:input_num]
-            for t in range(input_num,total_num):
-                with torch.no_grad():
-                    pred = self.net(input_X)
-                input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
-                preds=torch.cat((preds,pred),dim=1) 
-            X, preds = X.to(device="cpu"), preds.to(device="cpu")
-            save_gif(X[0], preds[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
+            X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
+            X = torch.FloatTensor(X).to(device)
+            mask_tensor = torch.FloatTensor(real_input_flag).to(device)
+
+            img_gen, loss= self.net(X, mask_tensor)
+
+            img_gen = preprocess.reshape_patch_back(img_gen, self.cfg.model.patch_size)
+            output_length = self.cfg.dataset.len_seq - self.cfg.model.input_num
+            img_out = img_gen[:, -output_length:]
+
+            X, img_out = X.to(device="cpu"), img_out.to(device="cpu")
+            save_gif(X[0], img_out[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
             self.log_artifact(f"pred_{phase}_{epoch}.gif")
 
     def reserve_schedule_sampling_exp(self, itr):
