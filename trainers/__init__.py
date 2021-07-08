@@ -5,9 +5,9 @@ These functions are for execution.
 
 """
 
-from trainers.default_trainer import DefaultTrainer
+from .default_trainer import DefaultTrainer
 from .unet_trainer import UnetTrainer
-
+from .predrnn_trainer import PredRNNTrainer
 def get_trainer(cfg: object) -> object:
     """Get trainer
 

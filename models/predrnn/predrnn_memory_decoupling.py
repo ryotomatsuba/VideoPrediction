@@ -6,9 +6,9 @@ from .SpatioTemporalLSTMCell_memory_decoupling import SpatioTemporalLSTMCell
 import torch.nn.functional as F
 
 
-class RNN(nn.Module):
+class PredRNN(nn.Module):
     def __init__(self, num_layers, num_hidden, configs):
-        super(RNN, self).__init__()
+        super(PredRNN, self).__init__()
 
         self.configs = configs
         self.visual = self.configs.visual

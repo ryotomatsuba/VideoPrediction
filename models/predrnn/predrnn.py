@@ -5,9 +5,9 @@ import torch.nn as nn
 from .SpatioTemporalLSTMCell import SpatioTemporalLSTMCell
 
 
-class RNN(nn.Module):
+class PredRNN(nn.Module):
     def __init__(self, num_layers, num_hidden, configs):
-        super(RNN, self).__init__()
+        super(PredRNN, self).__init__()
 
         self.configs = configs
         self.frame_channel = configs.patch_size * configs.patch_size * configs.img_channel
@@ -74,3 +74,6 @@ class RNN(nn.Module):
         next_frames = torch.stack(next_frames, dim=0).permute(1, 0, 3, 4, 2).contiguous()
         loss = self.MSE_criterion(next_frames, frames_tensor[:, 1:])
         return next_frames, loss
+
+if __name__=="__main__":
+    pass

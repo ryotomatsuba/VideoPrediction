@@ -1,7 +1,7 @@
 import os
 import torch
 from torch.optim import Adam
-from core.models import predrnn, predrnn_memory_decoupling
+from . import predrnn, predrnn_memory_decoupling
 
 class Model(object):
     def __init__(self, configs):
@@ -9,8 +9,8 @@ class Model(object):
         self.num_hidden = [int(x) for x in configs.num_hidden.split(',')]
         self.num_layers = len(self.num_hidden)
         networks_map = {
-            'predrnn': predrnn.RNN,
-            'predrnn_memory_decoupling': predrnn_memory_decoupling.RNN,
+            'predrnn': predrnn.PredRNN,
+            'predrnn_memory_decoupling': predrnn_memory_decoupling.PredRNN,
         }
 
         if configs.model_name in networks_map:
