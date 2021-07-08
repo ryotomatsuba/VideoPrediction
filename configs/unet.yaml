@@ -5,7 +5,7 @@ experiment:
   name: Mnist
 dataset: 
   num_data: 100
-  len_seq: 10
+  len_seq: 20
   input_num: 4
   motions: # motion to use (transition, rotation, growth_decay)
     - transition
@@ -24,8 +24,9 @@ train:
 
 # Model configs
 model:
-  load: "/home/data/ryoto/Unet/mlruns/2/e8ab44a681604eb9aaac31c6a4b26bfd/artifacts/best_ckpt.pth" # Load model from a .pth file
+  load: False
 test:
+  load_model: "/home/data/ryoto/Unet/mlruns/2/e8ab44a681604eb9aaac31c6a4b26bfd/artifacts/best_ckpt.pth" # Load model from a .pth file
   batch_size: 8
   device: cuda:1
   num_workers: 2

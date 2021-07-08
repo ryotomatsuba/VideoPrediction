@@ -20,9 +20,9 @@ def test(cfg):
     net = UNet(n_channels=4, n_classes=1, bilinear=True)
     net.to(device=device)
     net.load_state_dict(
-        torch.load(cfg.model.load, map_location=device)
+        torch.load(cfg.test.load_model, map_location=device)
     )
-    logging.info(f'Model loaded from {cfg.model.load}')
+    logging.info(f'Model loaded from {cfg.test.load_model}')
     net.eval()
     device = next(net.parameters()).device
 
