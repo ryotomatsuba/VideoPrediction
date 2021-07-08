@@ -3,6 +3,8 @@ __author__ = 'yunbo'
 import numpy as np
 
 def reshape_patch(img_tensor, patch_size):
+    if img_tensor.ndim==4:
+        img_tensor=img_tensor[...,np.newaxis]
     assert 5 == img_tensor.ndim
     batch_size = np.shape(img_tensor)[0]
     seq_length = np.shape(img_tensor)[1]
