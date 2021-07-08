@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 from .SpatioTemporalLSTMCell_memory_decoupling import SpatioTemporalLSTMCell
 import torch.nn.functional as F
-from core.utils.tsne import visualization
 
 
 class RNN(nn.Module):
@@ -103,12 +102,6 @@ class RNN(nn.Module):
                 decouple_loss.append(
                     torch.mean(torch.abs(torch.cosine_similarity(delta_c_list[i], delta_m_list[i], dim=2))))
 
-        if self.visual:
-            # visualization of delta_c and delta_m
-            delta_c_visual = torch.stack(delta_c_visual, dim=0)
-            delta_m_visual = torch.stack(delta_m_visual, dim=0)
-            visualization(self.configs.total_length, self.num_layers, delta_c_visual, delta_m_visual, self.visual_path)
-            self.visual = 0
 
         decouple_loss = torch.mean(torch.stack(decouple_loss, dim=0))
         # [length, batch, channel, height, width] -> [batch, length, height, width, channel]
