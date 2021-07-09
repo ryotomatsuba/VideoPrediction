@@ -65,8 +65,6 @@ class PredRNNTrainer(BaseTrainer):
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
         device = next(self.net.parameters()).device
-
-
         iteration = 0
 
         logging.info('Starting training')
@@ -90,7 +88,7 @@ class PredRNNTrainer(BaseTrainer):
 
                 mask_tensor = torch.FloatTensor(real_input_flag).to(device)
                 optimizer.zero_grad()
-                next_frames, loss = self.net(X, mask_tensor)
+                _, loss = self.net(X, mask_tensor)
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
@@ -140,14 +138,8 @@ class PredRNNTrainer(BaseTrainer):
             X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
             X = torch.FloatTensor(X).to(device)
             mask_tensor = torch.FloatTensor(real_input_flag).to(device)
-
-            img_gen, loss= self.net(X, mask_tensor)
-            img_gen = img_gen.detach().cpu().numpy() 
-            img_gen = preprocess.reshape_patch_back(img_gen, self.cfg.model.patch_size)
-            output_length = self.cfg.dataset.len_seq - self.cfg.model.input_num
-            img_gen_length = img_gen.shape[1]
-            img_out = img_gen[:, -output_length:]
-
+            with torch.no_grad():
+                _, loss= self.net(X, mask_tensor)
             epoch_loss += loss.item()
 
 
@@ -180,20 +172,18 @@ class PredRNNTrainer(BaseTrainer):
         for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
-            input_num = self.cfg.model.input_num
-            batch_size, total_num, height, width=X.shape
             X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
             X = torch.FloatTensor(X).to(device)
             mask_tensor = torch.FloatTensor(real_input_flag).to(device)
-
-            img_gen, loss= self.net(X, mask_tensor)
+            with torch.no_grad():
+                img_gen, _= self.net(X, mask_tensor)
             img_gen = img_gen.detach().cpu().numpy() 
             img_gen = preprocess.reshape_patch_back(img_gen, self.cfg.model.patch_size)
             output_length = self.cfg.dataset.len_seq - self.cfg.model.input_num
-            img_out = img_gen[:, -output_length:]
+            pred = img_gen[:, -output_length:]
             X = X.detach().cpu().numpy()
             X = preprocess.reshape_patch_back(X, self.cfg.model.patch_size)
-            save_gif(X[0], img_out[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
+            save_gif(X[0], pred[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
             self.log_artifact(f"pred_{phase}_{epoch}.gif")
 
     def reserve_schedule_sampling_exp(self, itr):
