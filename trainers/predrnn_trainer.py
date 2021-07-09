@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Default Trainer"""
+"""PredRNN Trainer"""
 
 import logging
 from models.predrnn import PredRNN
@@ -7,7 +7,6 @@ import torch
 from data.dataset import MnistDataset
 from trainers.base_trainer import BaseTrainer
 from utils.draw import save_gif
-from torch.utils.data import DataLoader,random_split
 import torch.nn as nn
 from torch import optim
 from models.predrnn.utils import preprocess
@@ -31,28 +30,10 @@ class PredRNNTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        # define dataset
-        dataset = MnistDataset(cfg)
-        n_val = int(len(dataset) * cfg.train.val_percent)
-        n_train = len(dataset) - n_val
-        train, val = random_split(dataset, [n_train, n_val])
-        self.train_loader = DataLoader(train, batch_size=cfg.train.batch_size, shuffle=True, num_workers=cfg.train.num_workers, pin_memory=True, drop_last=True)
-        self.val_loader = DataLoader(val, batch_size=cfg.train.batch_size, shuffle=False, num_workers=cfg.train.num_workers, pin_memory=True, drop_last=True)
-        # define model
-        device = torch.device(cfg.train.device)
-        net = PredRNN(cfg)
-        net.to(device=device)
+        self.dataset = MnistDataset(cfg) # define dataset
+        self.net = PredRNN(cfg) # define model
         logging.info('Network Ready')
-
-        if cfg.model.load:
-            net.load_state_dict(
-                torch.load(cfg.model.load, map_location=device)
-            )
-            logging.info(f'Model loaded from {cfg.load}')
-        self.net=net
         super().__init__(cfg)
-
-
 
     def train(self) -> None:
         """Train

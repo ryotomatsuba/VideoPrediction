@@ -5,6 +5,8 @@ import logging
 from abc import ABC
 from omegaconf import DictConfig,ListConfig
 from mlflow.tracking import MlflowClient
+from torch._C import device
+from torch.utils.data import DataLoader,random_split
 import mlflow
 import torch
 from torch.nn.modules import loss
@@ -75,7 +77,23 @@ class BaseTrainer(ABC):
         self.mlwriter=MlflowWriter(cfg.experiment.name,cfg.mlrun_path)
         self.loss={"train": [], "val": []}
         self.cfg = cfg
+        # load model params
+        device = torch.device(cfg.train.device)
+        if cfg.model.load:
+            self.net.load_state_dict(torch.load(cfg.model.load, map_location=device))
+            logging.info(f'Model loaded from {cfg.model.load}')
+        self.net.to(device=device)
         self.log_params()
+        self.set_dataloader()
+        
+    def set_dataloader(self):
+        """set dataloader from dataset"""
+        n_val = int(len(self.dataset) * self.cfg.train.val_percent)
+        n_train = len(self.dataset) - n_val
+        train, val = random_split(self.dataset, [n_train, n_val])
+        self.train_loader = DataLoader(train, batch_size=self.cfg.train.batch_size, shuffle=True, num_workers=self.cfg.train.num_workers, pin_memory=True, drop_last=True)
+        self.val_loader = DataLoader(val, batch_size=self.cfg.train.batch_size, shuffle=False, num_workers=self.cfg.train.num_workers, pin_memory=True, drop_last=True)
+
 
 
     def execute(self, eval: bool) -> None:
