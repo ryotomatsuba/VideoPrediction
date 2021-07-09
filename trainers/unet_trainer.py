@@ -30,30 +30,13 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        # define dataset
-        dataset = MnistDataset(cfg)
-        n_val = int(len(dataset) * cfg.train.val_percent)
-        n_train = len(dataset) - n_val
-        train, val = random_split(dataset, [n_train, n_val])
-        self.train_loader = DataLoader(train, batch_size=cfg.train.batch_size, shuffle=True, num_workers=cfg.train.num_workers, pin_memory=True)
-        self.val_loader = DataLoader(val, batch_size=cfg.train.batch_size, shuffle=False, num_workers=cfg.train.num_workers, pin_memory=True, drop_last=True)
-        # define model
-        device = torch.device(cfg.train.device)
-        net = UNet(n_channels=4, n_classes=1, bilinear=True)
-        net.to(device=device)
+        self.dataset = MnistDataset(cfg) # define dataset
+        self.net = UNet(n_channels=4, n_classes=1, bilinear=True) # define model
         logging.info(f'Network:\n'
-                    f'\t{net.n_channels} input channels\n'
-                    f'\t{net.n_classes} output channels (classes)\n'
-                    f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
-
-        if cfg.model.load:
-            net.load_state_dict(
-                torch.load(cfg.model.load, map_location=device)
-            )
-            logging.info(f'Model loaded from {cfg.load}')
-        self.net=net
+                    f'\t{self.net.n_channels} input channels\n'
+                    f'\t{self.net.n_classes} output channels (classes)\n'
+                    f'\t{"Bilinear" if self.net.bilinear else "Transposed conv"} upscaling')
         super().__init__(cfg)
-
 
     def train(self) -> None:
         """Train
@@ -87,7 +70,7 @@ class UnetTrainer(BaseTrainer):
             # train
             for X in self.train_loader:
                 X = X.to(device=device, dtype=torch.float32)
-                input_num=self.cfg.dataset.input_num
+                input_num=self.cfg.model.input_num
                 total_num=X.shape[1]
                 for t in range(input_num, total_num):
                     pred = self.net(X[:,t-input_num:t])
@@ -126,7 +109,7 @@ class UnetTrainer(BaseTrainer):
 
         for X in self.val_loader:
             X = X.to(device=device, dtype=torch.float32)
-            input_num=self.cfg.dataset.input_num
+            input_num=self.cfg.model.input_num
             total_num=X.shape[1]
             for t in range(input_num,total_num):
                 with torch.no_grad():
@@ -150,7 +133,7 @@ class UnetTrainer(BaseTrainer):
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
             X = X.to(device=device, dtype=torch.float32)
-            input_num = self.cfg.dataset.input_num
+            input_num = self.cfg.model.input_num
             batch_size, total_num, height, width=X.shape
             preds=torch.empty(batch_size, 0, height, width).to(device=device)
             input_X = X[:,0:input_num]

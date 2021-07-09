@@ -1,14 +1,13 @@
 
 defaults:
  - dataset: moving_mnist
-output_dir: Unet
 mlrun_path: /home/data/ryoto/Unet/mlruns/
 experiment:
-  name: Mnist
+  name: Default
 # Training configs
 train:
-  epochs: 50
-  batch_size: 8
+  epochs: 2
+  batch_size: 4
   device: cuda:1
   save_best_ckpt: True
   num_workers: 2
@@ -18,6 +17,7 @@ train:
 
 # Model configs
 model:
+  input_num: 4
   load: False
 test:
   load_model: "/home/data/ryoto/Unet/mlruns/2/e8ab44a681604eb9aaac31c6a4b26bfd/artifacts/best_ckpt.pth" # Load model from a .pth file
