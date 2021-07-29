@@ -111,7 +111,7 @@ class ActionDataset(Dataset):
         all_videos=[]
         for action_name in self.cfg.dataset.actions:
             videos=self.get_action_videos(action_name)
-            videos=self.augment_videos(videos)
+            videos=self.augment_videos(videos, num_frames=self.cfg.dataset.num_frames)
             all_videos.extend(videos)
         self.data=np.array(all_videos)
 
@@ -124,11 +124,11 @@ if __name__=="__main__":
     # test ActionDataset class
     cfg=DictConfig({
         "dataset":{
-            "len_seq":10,
+            "num_frames":20,
             "img_width": 128,
             "img_channel": 1,
             "max_intensity": 1,
-            "actions":["walking", "jogging", "running", "boxing", "handwaving", "handclapping"],
+            "actions":["walking"],
         }
     })
     dataset=ActionDataset(cfg)
