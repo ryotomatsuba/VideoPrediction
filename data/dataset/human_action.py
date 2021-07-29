@@ -146,8 +146,6 @@ if __name__=="__main__":
         "dataset":{
             "num_frames":20,
             "img_width": 128,
-            "img_channel": 1,
-            "max_intensity": 1,
             "actions":["walking"],
         }
     })
