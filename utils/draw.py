@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 500):
+def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 500, greyscale=False):
     """
     params:
         gt_images,pd_images:(frame,width,hight)
@@ -17,19 +17,20 @@ def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 5
     vmin=0
     vmax=np.max(gt_images)
     input_length=len(gt_images)-len(pd_images)
-
+    cmap = 'Greys' if greyscale else 'jet'
     def update(i, ax1, ax2):
         ax1.set_title(f'gt{i}') 
-        ax1.imshow(gt_images[i], vmin = vmin, vmax = vmax, cmap = 'jet') 
+        ax1.imshow(gt_images[i], vmin = vmin, vmax = vmax, cmap = cmap) 
         if i>=input_length:
             ax2.set_title(f'est{i}')
-            ax2.imshow(pd_images[i-input_length], vmin=vmin , vmax = vmax, cmap = 'jet')
+            ax2.imshow(pd_images[i-input_length], vmin=vmin , vmax = vmax, cmap = cmap)
     fig, (ax1, ax2) = plt.subplots(1,2)  
     fig.suptitle(suptitle)
-    im2=ax2.imshow(np.zeros_like(gt_images[0]), vmin=vmin , vmax = vmax, cmap = 'jet')
-    divider = make_axes_locatable(ax2)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im2,cax=cax)
+    if not greyscale:
+        im2=ax2.imshow(np.zeros_like(gt_images[0]), vmin=vmin , vmax = vmax, cmap = cmap)
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im2,cax=cax)
     ani = animation.FuncAnimation(fig, update, fargs = (ax1, ax2), interval = interval, frames = len(gt_images))
     ani.save(save_path, writer = 'imagemagick')
     plt.close()
@@ -94,6 +95,11 @@ class Test(unittest.TestCase):
     def test_weight_gif(self):
         W = np.load("/home/lab/ryoto/src/STMoE_experiments/test/W.npy")
         save_weight_gif(W[0],4,save_path="weights_3.gif",suptitle="weights:epoch=3")
+    
+    def test_save_gif(self):
+        gt_images = np.random.rand(10,128,128)
+        pd_images = np.random.rand(10,128,128)
+        save_gif(gt_images,pd_images,save_path="test.gif", greyscale=True,)
 
 if __name__ == '__main__':
     unittest.main()
