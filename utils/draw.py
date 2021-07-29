@@ -17,7 +17,7 @@ def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 5
     vmin=0
     vmax=np.max(gt_images)
     input_length=len(gt_images)-len(pd_images)
-    cmap = 'Greys' if greyscale else 'jet'
+    cmap = 'Greys_r' if greyscale else 'jet'
     def update(i, ax1, ax2):
         ax1.set_title(f'gt{i}') 
         ax1.imshow(gt_images[i], vmin = vmin, vmax = vmax, cmap = cmap) 
