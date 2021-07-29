@@ -26,8 +26,8 @@ def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 5
             ax2.imshow(pd_images[i-input_length], vmin=vmin , vmax = vmax, cmap = cmap)
     fig, (ax1, ax2) = plt.subplots(1,2)  
     fig.suptitle(suptitle)
+    im2=ax2.imshow(np.zeros_like(gt_images[0]), vmin=vmin , vmax = vmax, cmap = cmap)
     if not greyscale:
-        im2=ax2.imshow(np.zeros_like(gt_images[0]), vmin=vmin , vmax = vmax, cmap = cmap)
         divider = make_axes_locatable(ax2)
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im2,cax=cax)
@@ -96,15 +96,16 @@ class Test(unittest.TestCase):
         W = np.load("/home/lab/ryoto/src/STMoE_experiments/test/W.npy")
         save_weight_gif(W[0],4,save_path="weights_3.gif",suptitle="weights:epoch=3")
     
-    def test_save_gif_grey(self):
-        gt_images = np.random.rand(10,128,128)
-        pd_images = np.random.rand(10,128,128)
-        save_gif(gt_images,pd_images,save_path="test.gif", greyscale=True,)
-    
     def test_save_gif(self):
-        gt_images = np.random.rand(10,128,128)
+        gt_images = np.random.rand(20,128,128)
         pd_images = np.random.rand(10,128,128)
         save_gif(gt_images,pd_images,save_path="test.gif",)
+
+    def test_save_gif_grey(self):
+        gt_images = np.random.rand(20,128,128)
+        pd_images = np.random.rand(10,128,128)
+        save_gif(gt_images,pd_images,save_path="test.gif", greyscale=True,suptitle="grey")
+    
 
 if __name__ == '__main__':
     unittest.main()
