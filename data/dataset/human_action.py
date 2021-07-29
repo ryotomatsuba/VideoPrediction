@@ -86,9 +86,10 @@ class ActionDataset(Dataset):
             videos.append(video_sequence)
         return videos
     
-    def augment_videos(self,videos,num_frames=10):
+    def augment_videos(self,videos,num_frames=10, num_crop=30):
         """
-        augment a video sequence
+        augment a video sequence by shifting frames.
+        if num_crop>0, then crop front and back frames.
 
         Args:
             video_sequence: numpy array, video sequence. ex: (id, long_frames, H, W)
@@ -99,7 +100,7 @@ class ActionDataset(Dataset):
         frames_shift = self.cfg.dataset.frames_shift
         new_videos=[]
         for video in videos:
-            for start in range(0,len(video)-num_frames+1,frames_shift):
+            for start in range(num_crop,len(video)-num_frames-num_crop+1,frames_shift):
                 new_video=video[start:start+num_frames]
                 new_videos.append(new_video)
         return new_videos
@@ -155,4 +156,4 @@ if __name__=="__main__":
     dataset=ActionDataset(cfg)
     print(dataset[0].shape)
     print(len(dataset))
-    save_gif(dataset[0],dataset[0],"test.gif",greyscale=True)
+    save_gif(dataset[30],dataset[40],"test.gif",greyscale=True)
