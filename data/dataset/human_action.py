@@ -81,7 +81,7 @@ class ActionDataset(Dataset):
             video=Video(str(video_path))
             video_sequence=[]
             for i in range(len(video)):
-                print(f"read {video_path},{i}/{len(video)-1}", end="\r")
+                print(f"read {video_path}", end="\r")
                 video_sequence.append(video[i])
             videos.append(video_sequence)
         return videos
