@@ -5,7 +5,7 @@ import logging
 import torch.nn as nn
 import torch
 from torch import optim
-import os
+from tqdm import tqdm
 import numpy as np
 from trainers.base_trainer import BaseTrainer
 from data.dataset import MnistDataset,ActionDataset
@@ -70,19 +70,20 @@ class UnetTrainer(BaseTrainer):
 
             epoch_loss = 0
             # train
-            for X in self.train_loader:
-                X = X.to(device=device, dtype=torch.float32)
-                input_num=self.cfg.model.input_num
-                total_num=X.shape[1]
-                for t in range(input_num, total_num):
-                    pred = self.net(X[:,t-input_num:t])
-                    loss = self.criterion(pred, X[:,[t]])
-                    epoch_loss += loss.item()
-                    optimizer.zero_grad()
-                    loss.backward()
-                    nn.utils.clip_grad_value_(self.net.parameters(), 0.1)
-                    optimizer.step()
-                global_step += 1
+            with tqdm(self.train_loader, ncols=100) as pbar:
+                for X in pbar:
+                    X = X.to(device=device, dtype=torch.float32)
+                    input_num=self.cfg.model.input_num
+                    total_num=X.shape[1]
+                    for t in range(input_num, total_num):
+                        pred = self.net(X[:,t-input_num:t])
+                        loss = self.criterion(pred, X[:,[t]])
+                        epoch_loss += loss.item()
+                        optimizer.zero_grad()
+                        loss.backward()
+                        nn.utils.clip_grad_value_(self.net.parameters(), 0.1)
+                        optimizer.step()
+                    global_step += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
             logging.info(f'Train MSE     : {loss_ave}')
@@ -108,16 +109,16 @@ class UnetTrainer(BaseTrainer):
 
         self.net.eval()
         epoch_loss = 0 
-
-        for X in self.val_loader:
-            X = X.to(device=device, dtype=torch.float32)
-            input_num=self.cfg.model.input_num
-            total_num=X.shape[1]
-            for t in range(input_num,total_num):
-                with torch.no_grad():
-                    pred = self.net(X[:,t-input_num:t])
-                loss = self.criterion(pred, X[:,[t]])
-                epoch_loss += loss.item()
+        with tqdm(self.val_loader, ncols=100) as pbar:
+            for X in pbar:
+                X = X.to(device=device, dtype=torch.float32)
+                input_num=self.cfg.model.input_num
+                total_num=X.shape[1]
+                for t in range(input_num,total_num):
+                    with torch.no_grad():
+                        pred = self.net(X[:,t-input_num:t])
+                    loss = self.criterion(pred, X[:,[t]])
+                    epoch_loss += loss.item()
 
 
         loss_ave=epoch_loss/len(self.val_loader)
