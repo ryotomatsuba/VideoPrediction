@@ -1,15 +1,16 @@
 defaults:
- - dataset: moving_mnist
-mlrun_path: /home/data/ryoto/PredRNN/mlruns/
+ - dataset: human_action
+mlrun_path: /home/data/ryoto/Result/mlruns/
 experiment:
   name: Default
 
 # Training configs
 train:
-  epochs: 5
+  epochs: 2
   batch_size: 2
-  device: cuda:1
+  device: cuda:2
   save_best_ckpt: True
+  num_save_images: 3
   num_workers: 2
   ckpt_path: best_ckpt.pth
   lr: 0.0001
@@ -19,7 +20,7 @@ train:
 model:
   name: predrnn
   load: False
-  input_num: 4
+  input_num: 8
   num_hidden: [64,64,64,64]
   filter_size: 5
   stride: 1

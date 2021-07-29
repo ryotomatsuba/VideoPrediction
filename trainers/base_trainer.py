@@ -3,6 +3,7 @@
 import glob
 import logging
 from abc import ABC
+from matplotlib.pyplot import draw
 from omegaconf import DictConfig,ListConfig
 from mlflow.tracking import MlflowClient
 from torch._C import device
@@ -10,6 +11,9 @@ from torch.utils.data import DataLoader,random_split
 import mlflow
 import torch
 from torch.nn.modules import loss
+from data.dataset import get_dataset
+from utils.draw import save_gif
+
 
 log = logging.getLogger(__name__)
 class MlflowWriter():
@@ -88,6 +92,7 @@ class BaseTrainer(ABC):
         
     def set_dataloader(self):
         """set dataloader from dataset"""
+        self.dataset = get_dataset(self.cfg) # define dataset
         n_val = int(len(self.dataset) * self.cfg.train.val_percent)
         n_train = len(self.dataset) - n_val
         train, val = random_split(self.dataset, [n_train, n_val])
@@ -159,3 +164,13 @@ class BaseTrainer(ABC):
             "val_loss":self.loss["val"][-1],
         }
         self.mlwriter.log_metrics(metrics, step=epoch)
+
+    def save_gif(self,gt_images,pd_images,epoch,phase):
+        num_save_images=self.cfg.train.num_save_images
+        draw_grey=self.cfg.dataset.grey_scale
+        if num_save_images>self.cfg.train.batch_size:
+            num_save_images=self.cfg.train.batch_size
+        for i in range(num_save_images):
+            save_gif(gt_images[i], pd_images[i], save_path = f"pred_{phase}_{epoch}({i}).gif", suptitle=f"{phase}_{epoch}",greyscale=draw_grey)
+            self.log_artifact(f"pred_{phase}_{epoch}({i}).gif")
+

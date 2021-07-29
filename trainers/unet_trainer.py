@@ -147,9 +147,4 @@ class UnetTrainer(BaseTrainer):
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
             X, preds = X.to(device="cpu"), preds.to(device="cpu")
-            num_save_images=self.cfg.train.num_save_images
-            if num_save_images>batch_size:
-                num_save_images=batch_size
-            for i in range(num_save_images):
-                save_gif(X[i], preds[i], save_path = f"pred_{phase}_{epoch}({i}).gif", suptitle=f"{phase}_{epoch}",greyscale=draw_grey)
-                self.log_artifact(f"pred_{phase}_{epoch}({i}).gif")
+            super().save_gif(X, pred, epoch, phase)

@@ -18,6 +18,7 @@ train:
 
 # Model configs
 model:
+  name: unet
   input_num: 10
   load: False
 test:

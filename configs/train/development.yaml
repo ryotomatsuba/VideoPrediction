@@ -1,0 +1,11 @@
+# @package _group_
+name: development
+epochs: 2
+batch_size: 2
+device: cuda:1
+save_best_ckpt: True
+num_save_images: 3  # of images saved per checkpoint
+num_workers: 2
+ckpt_path: best_ckpt.pth
+lr: 0.0001
+val_percent: 0.1 # Percent of the data that is used as validation (0-1)
