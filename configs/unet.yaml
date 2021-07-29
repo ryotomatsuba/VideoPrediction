@@ -3,11 +3,10 @@ defaults:
  - dataset: human_action
 mlrun_path: /home/data/ryoto/Result/mlruns/
 experiment:
-  name: Default
-  run_name: run_name # name for experiment
+  name: Unet
 # Training configs
 train:
-  epochs: 2
+  epochs: 50
   batch_size: 8
   device: cuda:0
   save_best_ckpt: True
