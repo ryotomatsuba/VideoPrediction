@@ -8,9 +8,10 @@ experiment:
 # Training configs
 train:
   epochs: 2
-  batch_size: 4
-  device: cuda:1
+  batch_size: 8
+  device: cuda:0
   save_best_ckpt: True
+  num_save_images: 3  # of images saved per checkpoint
   num_workers: 2
   ckpt_path: best_ckpt.pth
   lr: 0.0001
