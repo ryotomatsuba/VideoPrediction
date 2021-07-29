@@ -29,10 +29,6 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        if cfg.dataset.name == "human_action":
-            self.dataset = ActionDataset(cfg)
-        else:
-            self.dataset = MnistDataset(cfg) # define dataset
         self.net = UNet(n_channels=cfg.model.input_num, n_classes=1, bilinear=True) # define model
         logging.info(f'Network:\n'
                     f'\t{self.net.n_channels} input channels\n'
@@ -50,7 +46,6 @@ class UnetTrainer(BaseTrainer):
         super().train()
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
-        img_scale=self.cfg.scale
         device = next(self.net.parameters()).device
 
 
@@ -147,4 +142,4 @@ class UnetTrainer(BaseTrainer):
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
             X, preds = X.to(device="cpu"), preds.to(device="cpu")
-            super().save_gif(X, pred, epoch, phase)
+            super().save_gif(X, preds, epoch, phase)

@@ -22,7 +22,11 @@ def get_trainer(cfg: object) -> object:
 
     """
 
-    trainer_name = cfg.train.trainer.name
+    
 
-    if trainer_name == "default":
-        return DefaultTrainer(cfg)
+    if cfg.model.name == "predrnn":
+        return PredRNNTrainer(cfg)
+    elif cfg.model.name == "unet":
+        return UnetTrainer(cfg)
+    else:
+        raise NotImplementedError(f"Not supported model: {cfg.model.name}")
