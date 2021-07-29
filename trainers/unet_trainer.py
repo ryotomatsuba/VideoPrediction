@@ -8,8 +8,7 @@ from torch import optim
 import os
 import numpy as np
 from trainers.base_trainer import BaseTrainer
-from torch.utils.data import DataLoader,random_split
-from data.dataset import MnistDataset
+from data.dataset import MnistDataset,ActionDataset
 from utils.draw import save_gif
 
 log = logging.getLogger(__name__)
@@ -30,8 +29,11 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.dataset = MnistDataset(cfg) # define dataset
-        self.net = UNet(n_channels=4, n_classes=1, bilinear=True) # define model
+        if cfg.dataset.name == "human_action":
+            self.dataset = ActionDataset(cfg)
+        else:
+            self.dataset = MnistDataset(cfg) # define dataset
+        self.net = UNet(n_channels=cfg.model.input_num, n_classes=1, bilinear=True) # define model
         logging.info(f'Network:\n'
                     f'\t{self.net.n_channels} input channels\n'
                     f'\t{self.net.n_classes} output channels (classes)\n'
@@ -129,6 +131,7 @@ class UnetTrainer(BaseTrainer):
         """
         device = next(self.net.parameters()).device
         self.net.eval()
+        draw_grey = self.cfg.dataset.grey_scale
         for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
@@ -143,5 +146,5 @@ class UnetTrainer(BaseTrainer):
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
             X, preds = X.to(device="cpu"), preds.to(device="cpu")
-            save_gif(X[0], preds[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
+            save_gif(X[0], preds[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}",greyscale=draw_grey)
             self.log_artifact(f"pred_{phase}_{epoch}.gif")

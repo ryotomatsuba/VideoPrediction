@@ -1,7 +1,7 @@
 
 defaults:
- - dataset: moving_mnist
-mlrun_path: /home/data/ryoto/Unet/mlruns/
+ - dataset: human_action
+mlrun_path: /home/data/ryoto/Result/mlruns/
 experiment:
   name: Default
   run_name: run_name # name for experiment
@@ -18,7 +18,7 @@ train:
 
 # Model configs
 model:
-  input_num: 4
+  input_num: 8
   load: False
 test:
   load_model: "/home/data/ryoto/Unet/mlruns/2/e8ab44a681604eb9aaac31c6a4b26bfd/artifacts/best_ckpt.pth" # Load model from a .pth file
