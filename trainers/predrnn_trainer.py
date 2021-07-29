@@ -107,7 +107,7 @@ class PredRNNTrainer(BaseTrainer):
 
         real_input_flag = np.zeros(
             (self.cfg.train.batch_size,
-            self.cfg.dataset.len_seq - mask_input - 1,
+            self.cfg.dataset.num_frames - mask_input - 1,
             self.cfg.dataset.img_width // self.cfg.model.patch_size,
             self.cfg.dataset.img_width // self.cfg.model.patch_size,
             self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
@@ -142,7 +142,7 @@ class PredRNNTrainer(BaseTrainer):
 
         real_input_flag = np.zeros(
             (self.cfg.train.batch_size,
-            self.cfg.dataset.len_seq - mask_input - 1,
+            self.cfg.dataset.num_frames - mask_input - 1,
             self.cfg.dataset.img_width // self.cfg.model.patch_size,
             self.cfg.dataset.img_width // self.cfg.model.patch_size,
             self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
@@ -160,7 +160,7 @@ class PredRNNTrainer(BaseTrainer):
                 img_gen, _= self.net(X, mask_tensor)
             img_gen = img_gen.detach().cpu().numpy() 
             img_gen = preprocess.reshape_patch_back(img_gen, self.cfg.model.patch_size)
-            output_length = self.cfg.dataset.len_seq - self.cfg.model.input_num
+            output_length = self.cfg.dataset.num_frames - self.cfg.model.input_num
             pred = img_gen[:, -output_length:]
             X = X.detach().cpu().numpy()
             X = preprocess.reshape_patch_back(X, self.cfg.model.patch_size)
@@ -183,11 +183,11 @@ class PredRNNTrainer(BaseTrainer):
             eta = 0.0
 
         r_random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, self.cfg.dataset.len_seq - 1))
+            (self.cfg.train.batch_size, self.cfg.dataset.num_frames - 1))
         r_true_token = (r_random_flip < r_eta)
 
         random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1))
+            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1))
         true_token = (random_flip < eta)
 
         ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
@@ -200,13 +200,13 @@ class PredRNNTrainer(BaseTrainer):
         real_input_flag = []
         for i in range(self.cfg.train.batch_size):
             for j in range(self.cfg.dataset.num_data - 2):
-                if j < self.cfg.dataset.len_seq - 1:
+                if j < self.cfg.dataset.num_frames - 1:
                     if r_true_token[i, j]:
                         real_input_flag.append(ones)
                     else:
                         real_input_flag.append(zeros)
                 else:
-                    if true_token[i, j - (self.cfg.dataset.len_seq - 1)]:
+                    if true_token[i, j - (self.cfg.dataset.num_frames - 1)]:
                         real_input_flag.append(ones)
                     else:
                         real_input_flag.append(zeros)
@@ -223,7 +223,7 @@ class PredRNNTrainer(BaseTrainer):
 
     def schedule_sampling(self, eta, itr):
         zeros = np.zeros((self.cfg.train.batch_size,
-                        self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1,
+                        self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1,
                         self.cfg.dataset.img_width // self.cfg.model.patch_size,
                         self.cfg.dataset.img_width // self.cfg.model.patch_size,
                         self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
@@ -235,7 +235,7 @@ class PredRNNTrainer(BaseTrainer):
         else:
             eta = 0.0
         random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1))
+            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1))
         true_token = (random_flip < eta)
         ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
                         self.cfg.dataset.img_width // self.cfg.model.patch_size,
@@ -245,7 +245,7 @@ class PredRNNTrainer(BaseTrainer):
                         self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
         real_input_flag = []
         for i in range(self.cfg.train.batch_size):
-            for j in range(self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1):
+            for j in range(self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1):
                 if true_token[i, j]:
                     real_input_flag.append(ones)
                 else:
@@ -253,7 +253,7 @@ class PredRNNTrainer(BaseTrainer):
         real_input_flag = np.array(real_input_flag)
         real_input_flag = np.reshape(real_input_flag,
                                     (self.cfg.train.batch_size,
-                                    self.cfg.dataset.num_data - self.cfg.dataset.len_seq - 1,
+                                    self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1,
                                     self.cfg.dataset.img_width // self.cfg.model.patch_size,
                                     self.cfg.dataset.img_width // self.cfg.model.patch_size,
                                     self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))

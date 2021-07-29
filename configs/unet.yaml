@@ -4,6 +4,7 @@ defaults:
 mlrun_path: /home/data/ryoto/Unet/mlruns/
 experiment:
   name: Default
+  run_name: run_name # name for experiment
 # Training configs
 train:
   epochs: 2

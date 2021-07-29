@@ -19,7 +19,7 @@ class TyphoonDataset(Dataset):
     def __init__(self,cfg):
         
         num_data=cfg.dataset.num_data
-        self.data = mv_mnist(num_data,cfg.dataset.len_seq,cfg.dataset.motions)
+        self.data = mv_mnist(num_data,cfg.dataset.num_frames,cfg.dataset.motions)
         self.data *= cfg.dataset.max_intensity/255
 
     def __len__(self):
@@ -34,19 +34,17 @@ class TyphoonDataset(Dataset):
 
 class Test(unittest.TestCase):
     def test(self):
-        cfg={
+        cfg = {
             "dataset":{
                 "num_data":10,
-                "len_seq": 5,
+                "num_frames": 5,
                 "max_intensity": 1,
                 "motions":["transition", "rotation", "growth_decay"]
             }
         }
-        cfg=DictConfig(cfg)
-        self.dataset=MnistDataset(cfg)
-        self.assertEqual(self.dataset[0].shape,(cfg.dataset.len_seq,128,128))
-        self.assertEqual(len(self.dataset),cfg.dataset.num_data)
-        save_gif(self.dataset[0],self.dataset[1])
+        cfg = DictConfig(cfg)
+        data = np.load("/home/data/ryoto/Datasets/typhoon/severe_train.npy")
+        print(data)
 
 
 if __name__=="__main__":

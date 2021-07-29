@@ -1,7 +1,7 @@
 # @package _group_
 
-num_data: 1000
-len_seq: 10
+num_data: 5000
+num_frames: 10
 img_width: 128
 img_channel: 1
 max_intensity: 1

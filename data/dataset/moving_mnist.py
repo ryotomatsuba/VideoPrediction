@@ -19,7 +19,7 @@ class MnistDataset(Dataset):
     def __init__(self,cfg):
         
         num_data=cfg.dataset.num_data
-        self.data = mv_mnist(num_data,cfg.dataset.len_seq,cfg.dataset.motions)
+        self.data = mv_mnist(num_data,cfg.dataset.num_frames,cfg.dataset.motions)
         self.data *= cfg.dataset.max_intensity/255
 
     def __len__(self):
@@ -31,7 +31,7 @@ class MnistDataset(Dataset):
         return X
 
 
-def mv_mnist(num_sample, len_seq=10, choice=["transition", "rotation", "growth_decay"]):
+def mv_mnist(num_sample, num_frames=10, choice=["transition", "rotation", "growth_decay"]):
     """
     make moving mnist videos
     Params:
@@ -42,47 +42,47 @@ def mv_mnist(num_sample, len_seq=10, choice=["transition", "rotation", "growth_d
     mnist_num, mnist_h, mnist_w = mnist.shape
     output_h, output_w = 128, 128 
     seeds = np.arange(0, num_sample, 1)
-    data = np.zeros((num_sample, len_seq, output_h, output_w))
+    data = np.zeros((num_sample, num_frames, output_h, output_w))
     for i in range(num_sample):
         np.random.seed(seeds[i])
         for j in range(3):
             motion=random.choice(choice)
             index=np.random.choice(mnist_num)
             if motion=="transition":
-                data[i]+=make_transition_movie(mnist[index], len_seq=len_seq) # overrap videos
+                data[i]+=make_transition_movie(mnist[index], num_frames=num_frames) # overrap videos
             if motion=="rotation":
-                data[i]+=make_rotation_movie(mnist[index], len_seq=len_seq) # overrap videos
+                data[i]+=make_rotation_movie(mnist[index], num_frames=num_frames) # overrap videos
             if motion=="growth_decay":
-                data[i]+=make_growth_decay_movie(mnist[index], len_seq=len_seq) # overrap videos
+                data[i]+=make_growth_decay_movie(mnist[index], num_frames=num_frames) # overrap videos
     return data      
 
 
-def make_rotation_movie(image, len_seq=10, angle_range=30):
+def make_rotation_movie(image, num_frames=10, angle_range=30):
     """
     Params: image = mnist image shape (28,28)
-    Return: rotation movie shape(len_seq,128,128)
+    Return: rotation movie shape(num_frames,128,128)
     """
     angles=np.random.randint(-angle_range, angle_range)
-    rotation_movie = np.zeros((len_seq, 128, 128))
+    rotation_movie = np.zeros((num_frames, 128, 128))
     x, y = np.random.randint(0, 128-28, size=2) # rotate center
-    for t in range(0, len_seq):
+    for t in range(0, num_frames):
         rotation_matrix = cv2.getRotationMatrix2D((14,14), angles*t, 1)
         rotation_movie[t, x:x+28, y:y+28] = cv2.warpAffine(image, rotation_matrix, (28, 28))
     return rotation_movie
 
-def make_transition_movie(image, len_seq=10, v_range=3, a_range=0):
+def make_transition_movie(image, num_frames=10, v_range=3, a_range=0):
     """
     Params: image = mnist image shape (28,28)
-    Return: transition movie shape(len_seq,128,128)
+    Return: transition movie shape(num_frames,128,128)
     """
-    transition_movie = np.zeros((len_seq, 256, 256))
+    transition_movie = np.zeros((num_frames, 256, 256))
     x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
     v_x, v_y = np.random.randint(-v_range, v_range, size=2)
     if a_range:
         a_x, a_y = np.random.randint(-a_range, a_range, size=2)
     else:
         a_x, a_y = 0, 0
-    for t in range(len_seq):
+    for t in range(num_frames):
         x = x_trans + v_x*t + a_x*t**2
         y = y_trans + v_y*t + a_y*t**2
         try:
@@ -93,18 +93,18 @@ def make_transition_movie(image, len_seq=10, v_range=3, a_range=0):
     transition_movie=transition_movie[:, 64:192, 64:192] # center crop       
     return transition_movie
 
-def make_growth_decay_movie(image, len_seq=10):
+def make_growth_decay_movie(image, num_frames=10):
     """
     Params: image = mnist image shape (28,28)
-    Return: growth/decay movie shape(len_seq,128,128)
+    Return: growth/decay movie shape(num_frames,128,128)
     """
-    growth_decay_mnist = np.zeros((len_seq, 128, 128)) # data for growth_decay
+    growth_decay_mnist = np.zeros((num_frames, 128, 128)) # data for growth_decay
     x_grow, y_grow = np.random.randint(0, 128-28, size=2) # growth/decay position
     mask = np.random.rand(1).reshape(1, 1) 
     mask /= np.sum(mask) if np.sum(mask)!=0 else mask
     mask = (1 + np.random.uniform(-0.5, 0.5)) * mask
     growth_decay_mnist[0, y_grow:y_grow+28, x_grow:x_grow+28] = image
-    for t in range(len_seq):        
+    for t in range(num_frames):        
         # growth and decay processing
         if t>0:
             da_t = signal.convolve2d(growth_decay_mnist[t-1], mask, mode = 'same')
@@ -124,14 +124,14 @@ class Test(unittest.TestCase):
         cfg={
             "dataset":{
                 "num_data":10,
-                "len_seq": 5,
+                "num_frames": 5,
                 "max_intensity": 1,
                 "motions":["transition", "rotation", "growth_decay"]
             }
         }
         cfg=DictConfig(cfg)
         self.dataset=MnistDataset(cfg)
-        self.assertEqual(self.dataset[0].shape,(cfg.dataset.len_seq,128,128))
+        self.assertEqual(self.dataset[0].shape,(cfg.dataset.num_frames,128,128))
         self.assertEqual(len(self.dataset),cfg.dataset.num_data)
         save_gif(self.dataset[0],self.dataset[1])
 
