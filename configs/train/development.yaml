@@ -1,10 +1,10 @@
 # @package _group_
 name: development
-epochs: 2
+epochs: 1
 batch_size: 2
-device: cuda:1
+device: cuda:3
 save_best_ckpt: True
-num_save_images: 3  # of images saved per checkpoint
+num_save_images: 1  # of images saved per checkpoint
 num_workers: 2
 ckpt_path: best_ckpt.pth
 lr: 0.0001
