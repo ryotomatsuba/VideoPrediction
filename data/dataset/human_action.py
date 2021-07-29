@@ -71,18 +71,17 @@ class ActionDataset(Dataset):
         Args:
             action_name: string, name of the action
         Returns:
-            video: numpy array, video sequence. ex: (id, num_frames, 224, 224)
+            video: numpy array, video sequence. ex: (id, num_frames, h, w)
         """
         videos=[]
         video_path=f"/home/data/ryoto/Datasets/KTH/avi_data/{action_name}"
         video_path=Path(video_path)
         video_paths=video_path.glob("*.avi")
         for video_path in video_paths:
-            print(video_path)
             video=Video(str(video_path))
             video_sequence=[]
             for i in range(len(video)):
-                print(i, end="\r")
+                print(f"read {video_path},{i}/{len(video)-1}", end="\r")
                 video_sequence.append(video[i])
             videos.append(video_sequence)
         return videos
@@ -95,7 +94,7 @@ class ActionDataset(Dataset):
             video_sequence: numpy array, video sequence. ex: (id, long_frames, H, W)
             num_frames: int, number of frames
         Returns:
-            videos: numpy array, video sequence. ex: (id, num_frames, H, W)
+            videos: numpy array, video sequence. ex: (id, num_frames, h, w)
         """
         new_videos=[]
         for video in videos:
@@ -104,14 +103,35 @@ class ActionDataset(Dataset):
                 new_videos.append(new_video)
         return new_videos
     
+    def resize_videos(self,videos,size=(128,128)):
+        """
+        resize a video sequence
+
+        Args:
+            videos: numpy array, video sequence. ex: (id, num_frames, h, w)
+            size: tuple, size of the resized video
+        Returns:
+            videos: numpy array, video sequence. ex: (id, num_frames, h, w)
+        """
+        new_videos=[]
+        for video in videos:
+            new_video=[]
+            for frame in video:
+                frame=cv2.resize(frame,size)
+                new_video.append(frame)
+            new_videos.append(new_video)
+        return new_videos
+
     def get_action_dataset(self):
         """
         get action dataset
         """
+        size = (self.cfg.dataset.img_width, self.cfg.dataset.img_width)
         all_videos=[]
         for action_name in self.cfg.dataset.actions:
             videos=self.get_action_videos(action_name)
             videos=self.augment_videos(videos, num_frames=self.cfg.dataset.num_frames)
+            videos=self.resize_videos(videos,size=size)
             all_videos.extend(videos)
         self.data=np.array(all_videos)
 
@@ -133,4 +153,4 @@ if __name__=="__main__":
     })
     dataset=ActionDataset(cfg)
     print(dataset[0].shape)
-    save_gif(dataset[0],dataset[0],"test.gif")
+    save_gif(dataset[0],dataset[0],"test.gif",greyscale=True)
