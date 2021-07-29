@@ -96,10 +96,15 @@ class Test(unittest.TestCase):
         W = np.load("/home/lab/ryoto/src/STMoE_experiments/test/W.npy")
         save_weight_gif(W[0],4,save_path="weights_3.gif",suptitle="weights:epoch=3")
     
-    def test_save_gif(self):
+    def test_save_gif_grey(self):
         gt_images = np.random.rand(10,128,128)
         pd_images = np.random.rand(10,128,128)
         save_gif(gt_images,pd_images,save_path="test.gif", greyscale=True,)
+    
+    def test_save_gif(self):
+        gt_images = np.random.rand(10,128,128)
+        pd_images = np.random.rand(10,128,128)
+        save_gif(gt_images,pd_images,save_path="test.gif",)
 
 if __name__ == '__main__':
     unittest.main()
