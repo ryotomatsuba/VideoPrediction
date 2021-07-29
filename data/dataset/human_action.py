@@ -86,7 +86,7 @@ class ActionDataset(Dataset):
             videos.append(video_sequence)
         return videos
     
-    def augment_videos(self,videos,num_frames=10,shift=1):
+    def augment_videos(self,videos,num_frames=10):
         """
         augment a video sequence
 
@@ -96,9 +96,10 @@ class ActionDataset(Dataset):
         Returns:
             videos: numpy array, video sequence. ex: (id, num_frames, h, w)
         """
+        frames_shift = self.cfg.dataset.frames_shift
         new_videos=[]
         for video in videos:
-            for start in range(0,len(video)-num_frames+1,shift):
+            for start in range(0,len(video)-num_frames+1,frames_shift):
                 new_video=video[start:start+num_frames]
                 new_videos.append(new_video)
         return new_videos
@@ -134,6 +135,7 @@ class ActionDataset(Dataset):
             videos=self.resize_videos(videos,size=size)
             all_videos.extend(videos)
         self.data=np.array(all_videos)
+        print(f"dataset size is {self.data.shape}")
 
 
 
@@ -144,6 +146,7 @@ if __name__=="__main__":
     # test ActionDataset class
     cfg=DictConfig({
         "dataset":{
+            "frames_shift":300,
             "num_frames":20,
             "img_width": 128,
             "actions":["walking"],
@@ -151,4 +154,5 @@ if __name__=="__main__":
     })
     dataset=ActionDataset(cfg)
     print(dataset[0].shape)
+    print(len(dataset))
     save_gif(dataset[0],dataset[0],"test.gif",greyscale=True)

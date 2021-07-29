@@ -1,5 +1,6 @@
 # @package _group_
 name: human_action
+frames_shift: 300 # of frames to shift
 num_frames: 10
 img_width: 128
 grey_scale: True # if true save grey scale gif 
