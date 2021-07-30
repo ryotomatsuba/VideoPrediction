@@ -65,20 +65,19 @@ class UnetTrainer(BaseTrainer):
 
             epoch_loss = 0
             # train
-            with tqdm(self.train_loader, ncols=100) as pbar:
-                for X in pbar:
-                    X = X.to(device=device, dtype=torch.float32)
-                    input_num=self.cfg.model.input_num
-                    total_num=X.shape[1]
-                    for t in range(input_num, total_num):
-                        pred = self.net(X[:,t-input_num:t])
-                        loss = self.criterion(pred, X[:,[t]])
-                        epoch_loss += loss.item()
-                        optimizer.zero_grad()
-                        loss.backward()
-                        nn.utils.clip_grad_value_(self.net.parameters(), 0.1)
-                        optimizer.step()
-                    global_step += 1
+            for X in tqdm(self.train_loader, ncols=100):
+                X = X.to(device=device, dtype=torch.float32)
+                input_num=self.cfg.model.input_num
+                total_num=X.shape[1]
+                for t in range(input_num, total_num):
+                    pred = self.net(X[:,t-input_num:t])
+                    loss = self.criterion(pred, X[:,[t]])
+                    epoch_loss += loss.item()
+                    optimizer.zero_grad()
+                    loss.backward()
+                    nn.utils.clip_grad_value_(self.net.parameters(), 0.1)
+                    optimizer.step()
+                global_step += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
             logging.info(f'Train MSE     : {loss_ave}')
@@ -104,16 +103,16 @@ class UnetTrainer(BaseTrainer):
 
         self.net.eval()
         epoch_loss = 0 
-        with tqdm(self.val_loader, ncols=100) as pbar:
-            for X in pbar:
-                X = X.to(device=device, dtype=torch.float32)
-                input_num=self.cfg.model.input_num
-                total_num=X.shape[1]
-                for t in range(input_num,total_num):
-                    with torch.no_grad():
-                        pred = self.net(X[:,t-input_num:t])
-                    loss = self.criterion(pred, X[:,[t]])
-                    epoch_loss += loss.item()
+        
+        for X in tqdm(self.val_loader, ncols=100):
+            X = X.to(device=device, dtype=torch.float32)
+            input_num=self.cfg.model.input_num
+            total_num=X.shape[1]
+            for t in range(input_num,total_num):
+                with torch.no_grad():
+                    pred = self.net(X[:,t-input_num:t])
+                loss = self.criterion(pred, X[:,[t]])
+                epoch_loss += loss.item()
 
 
         loss_ave=epoch_loss/len(self.val_loader)
