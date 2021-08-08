@@ -31,7 +31,7 @@ class PredRNNTrainer(BaseTrainer):
 
         """
         self.net = PredRNN(cfg) # define model
-        logging.info('Network Ready')
+        logging.info('PredRNN Network Ready')
         super().__init__(cfg)
 
     def train(self) -> None:
