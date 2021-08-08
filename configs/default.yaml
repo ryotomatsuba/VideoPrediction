@@ -1,29 +1,16 @@
-# Default project 
-
-# Import presets
 defaults:
-  - hydra: custom
+ - dataset: human_action
+ - train: development
+ - model: predrnn
+ - sampling: default
 
-# Dir name
-output_dir: ExperimentTemplate
-mlrun_path: /data/${output_dir}/mlruns/
-
-# MLflow configs
+mlrun_path: /home/data/ryoto/Result/mlruns/
 experiment:
-  name: Default
-# Training configs
-train:
-  batch_size: 10
-  epochs: 10
-  save_best_ckpt: True
-  num_workers: 2
-  eval: False
-  ckpt_path: best_ckpt.pth
-  optimizer:
-    name: adam
-    lr: 0.0001
-    decay: 0.0001
+  name: ${model.name} ${train.name}
 
-# Model configs
-model:
-  initial_ckpt: 
+test:
+  load_model: "/home/data/ryoto/Unet/mlruns/2/e8ab44a681604eb9aaac31c6a4b26bfd/artifacts/best_ckpt.pth" # Load model from a .pth file
+  batch_size: 8
+  device: cuda:1
+  num_workers: 2
+  decouple_beta: 0.1

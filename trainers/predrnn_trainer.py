@@ -4,7 +4,6 @@
 import logging
 from models.predrnn import PredRNN
 import torch
-from data.dataset import MnistDataset
 from trainers.base_trainer import BaseTrainer
 from utils.draw import save_gif
 import torch.nn as nn
@@ -13,6 +12,7 @@ from models.predrnn.utils import preprocess
 log = logging.getLogger(__name__)
 import numpy as np
 import math
+from tqdm import tqdm
 
 class PredRNNTrainer(BaseTrainer):
     """DefaultTrainer
@@ -30,9 +30,8 @@ class PredRNNTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.dataset = MnistDataset(cfg) # define dataset
         self.net = PredRNN(cfg) # define model
-        logging.info('Network Ready')
+        logging.info('PredRNN Network Ready')
         super().__init__(cfg)
 
     def train(self) -> None:
@@ -59,7 +58,7 @@ class PredRNNTrainer(BaseTrainer):
             epoch_loss = 0
             eta = self.cfg.sampling.sampling_start_value
             # train
-            for X in self.train_loader:
+            for X in tqdm(self.train_loader, ncols=100):
                 X=preprocess.reshape_patch(X, self.cfg.model.patch_size)
                 X = X.to(device=device, dtype=torch.float32)
                 if self.cfg.sampling.reverse_scheduled_sampling == 1:
@@ -114,8 +113,7 @@ class PredRNNTrainer(BaseTrainer):
 
         if self.cfg.sampling.reverse_scheduled_sampling == 1:
             real_input_flag[:, :self.cfg.model.input_num - 1, :, :] = 1.0
-
-        for X in self.val_loader:    
+        for X in tqdm(self.val_loader, ncols=100):    
             X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
             X = torch.FloatTensor(X).to(device)
             mask_tensor = torch.FloatTensor(real_input_flag).to(device)
@@ -164,8 +162,8 @@ class PredRNNTrainer(BaseTrainer):
             pred = img_gen[:, -output_length:]
             X = X.detach().cpu().numpy()
             X = preprocess.reshape_patch_back(X, self.cfg.model.patch_size)
-            save_gif(X[0], pred[0], save_path = f"pred_{phase}_{epoch}.gif", suptitle=f"{phase}_{epoch}")
-            self.log_artifact(f"pred_{phase}_{epoch}.gif")
+            super().save_gif(X, pred, epoch, phase)
+            
 
     def reserve_schedule_sampling_exp(self, itr):
         if itr < self.cfg.sampling.r_sampling_step_1:
@@ -187,7 +185,7 @@ class PredRNNTrainer(BaseTrainer):
         r_true_token = (r_random_flip < r_eta)
 
         random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1))
+            (self.cfg.train.batch_size, len(self.dataset) - self.cfg.dataset.num_frames - 1))
         true_token = (random_flip < eta)
 
         ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
@@ -199,7 +197,7 @@ class PredRNNTrainer(BaseTrainer):
 
         real_input_flag = []
         for i in range(self.cfg.train.batch_size):
-            for j in range(self.cfg.dataset.num_data - 2):
+            for j in range(len(self.dataset) - 2):
                 if j < self.cfg.dataset.num_frames - 1:
                     if r_true_token[i, j]:
                         real_input_flag.append(ones)
@@ -214,7 +212,7 @@ class PredRNNTrainer(BaseTrainer):
         real_input_flag = np.array(real_input_flag)
         real_input_flag = np.reshape(real_input_flag,
                                     (self.cfg.train.batch_size,
-                                    self.cfg.dataset.num_data - 2,
+                                    len(self.dataset) - 2,
                                     self.cfg.dataset.img_width // self.cfg.model.patch_size,
                                     self.cfg.dataset.img_width // self.cfg.model.patch_size,
                                     self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
@@ -223,7 +221,7 @@ class PredRNNTrainer(BaseTrainer):
 
     def schedule_sampling(self, eta, itr):
         zeros = np.zeros((self.cfg.train.batch_size,
-                        self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1,
+                        len(self.dataset) - self.cfg.dataset.num_frames - 1,
                         self.cfg.dataset.img_width // self.cfg.model.patch_size,
                         self.cfg.dataset.img_width // self.cfg.model.patch_size,
                         self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
@@ -235,7 +233,7 @@ class PredRNNTrainer(BaseTrainer):
         else:
             eta = 0.0
         random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1))
+            (self.cfg.train.batch_size, len(self.dataset) - self.cfg.dataset.num_frames - 1))
         true_token = (random_flip < eta)
         ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
                         self.cfg.dataset.img_width // self.cfg.model.patch_size,
@@ -245,7 +243,7 @@ class PredRNNTrainer(BaseTrainer):
                         self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
         real_input_flag = []
         for i in range(self.cfg.train.batch_size):
-            for j in range(self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1):
+            for j in range(len(self.dataset) - self.cfg.dataset.num_frames - 1):
                 if true_token[i, j]:
                     real_input_flag.append(ones)
                 else:
@@ -253,7 +251,7 @@ class PredRNNTrainer(BaseTrainer):
         real_input_flag = np.array(real_input_flag)
         real_input_flag = np.reshape(real_input_flag,
                                     (self.cfg.train.batch_size,
-                                    self.cfg.dataset.num_data - self.cfg.dataset.num_frames - 1,
+                                    len(self.dataset) - self.cfg.dataset.num_frames - 1,
                                     self.cfg.dataset.img_width // self.cfg.model.patch_size,
                                     self.cfg.dataset.img_width // self.cfg.model.patch_size,
                                     self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))

@@ -29,10 +29,6 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        if cfg.dataset.name == "human_action":
-            self.dataset = ActionDataset(cfg)
-        else:
-            self.dataset = MnistDataset(cfg) # define dataset
         self.net = UNet(n_channels=cfg.model.input_num, n_classes=1, bilinear=True) # define model
         logging.info(f'Network:\n'
                     f'\t{self.net.n_channels} input channels\n'
@@ -50,7 +46,6 @@ class UnetTrainer(BaseTrainer):
         super().train()
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
-        img_scale=self.cfg.scale
         device = next(self.net.parameters()).device
 
 
@@ -70,20 +65,19 @@ class UnetTrainer(BaseTrainer):
 
             epoch_loss = 0
             # train
-            with tqdm(self.train_loader, ncols=100) as pbar:
-                for X in pbar:
-                    X = X.to(device=device, dtype=torch.float32)
-                    input_num=self.cfg.model.input_num
-                    total_num=X.shape[1]
-                    for t in range(input_num, total_num):
-                        pred = self.net(X[:,t-input_num:t])
-                        loss = self.criterion(pred, X[:,[t]])
-                        epoch_loss += loss.item()
-                        optimizer.zero_grad()
-                        loss.backward()
-                        nn.utils.clip_grad_value_(self.net.parameters(), 0.1)
-                        optimizer.step()
-                    global_step += 1
+            for X in tqdm(self.train_loader, ncols=100):
+                X = X.to(device=device, dtype=torch.float32)
+                input_num=self.cfg.model.input_num
+                total_num=X.shape[1]
+                for t in range(input_num, total_num):
+                    pred = self.net(X[:,t-input_num:t])
+                    loss = self.criterion(pred, X[:,[t]])
+                    epoch_loss += loss.item()
+                    optimizer.zero_grad()
+                    loss.backward()
+                    nn.utils.clip_grad_value_(self.net.parameters(), 0.1)
+                    optimizer.step()
+                global_step += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
             logging.info(f'Train MSE     : {loss_ave}')
@@ -109,16 +103,16 @@ class UnetTrainer(BaseTrainer):
 
         self.net.eval()
         epoch_loss = 0 
-        with tqdm(self.val_loader, ncols=100) as pbar:
-            for X in pbar:
-                X = X.to(device=device, dtype=torch.float32)
-                input_num=self.cfg.model.input_num
-                total_num=X.shape[1]
-                for t in range(input_num,total_num):
-                    with torch.no_grad():
-                        pred = self.net(X[:,t-input_num:t])
-                    loss = self.criterion(pred, X[:,[t]])
-                    epoch_loss += loss.item()
+        
+        for X in tqdm(self.val_loader, ncols=100):
+            X = X.to(device=device, dtype=torch.float32)
+            input_num=self.cfg.model.input_num
+            total_num=X.shape[1]
+            for t in range(input_num,total_num):
+                with torch.no_grad():
+                    pred = self.net(X[:,t-input_num:t])
+                loss = self.criterion(pred, X[:,[t]])
+                epoch_loss += loss.item()
 
 
         loss_ave=epoch_loss/len(self.val_loader)
@@ -147,9 +141,4 @@ class UnetTrainer(BaseTrainer):
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
             X, preds = X.to(device="cpu"), preds.to(device="cpu")
-            num_save_images=self.cfg.train.num_save_images
-            if num_save_images>batch_size:
-                num_save_images=batch_size
-            for i in range(num_save_images):
-                save_gif(X[i], preds[i], save_path = f"pred_{phase}_{epoch}({i}).gif", suptitle=f"{phase}_{epoch}",greyscale=draw_grey)
-                self.log_artifact(f"pred_{phase}_{epoch}({i}).gif")
+            super().save_gif(X, preds, epoch, phase)
