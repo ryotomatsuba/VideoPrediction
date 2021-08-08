@@ -2,16 +2,10 @@
 
 ## run training
 
-Unet
+1. set `configs/default.yaml`
+2. run `train.py`
 
 ```sh
 export PYTHONPATH=$PYTHONPATH:$PWD
-python src/train_unet.py
-```
-
-PredRNN
-
-```sh
-export PYTHONPATH=$PYTHONPATH:$PWD
-python src/train_predrnn.py
+python train.py
 ```
