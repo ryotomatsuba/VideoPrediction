@@ -65,10 +65,4 @@ RUN addgroup --gid $GROUP_ID $USERNAME && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USERNAME
 
-#dotfiles
-ENV DOTFILES_PATH /home/${USERNAME}/dotfiles
-RUN git clone https://github.com/tomoino/dotfiles.git $DOTFILES_PATH && \
-    chown -R ${USERNAME}:${USERNAME} $DOTFILES_PATH && \
-    sudo sh $DOTFILES_PATH/init_docker.sh
-
 WORKDIR /workspace
