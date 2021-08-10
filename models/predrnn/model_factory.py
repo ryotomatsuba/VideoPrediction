@@ -13,9 +13,14 @@ class Model(object):
             'predrnn_memory_decoupling': predrnn_memory_decoupling.PredRNN,
         }
 
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+
         if configs.model_name in networks_map:
             Network = networks_map[configs.model_name]
-            self.network = Network(self.num_layers, self.num_hidden, configs).to(configs.device)
+            self.network = Network(self.num_layers, self.num_hidden, configs).to(self.device)
         else:
             raise ValueError('Name of network unknown %s' % configs.model_name)
 
@@ -34,8 +39,8 @@ class Model(object):
         self.network.load_state_dict(stats['net_param'])
 
     def train(self, frames, mask):
-        frames_tensor = torch.FloatTensor(frames).to(self.configs.device)
-        mask_tensor = torch.FloatTensor(mask).to(self.configs.device)
+        frames_tensor = torch.FloatTensor(frames).to(self.device)
+        mask_tensor = torch.FloatTensor(mask).to(self.device)
         self.optimizer.zero_grad()
         next_frames, loss = self.network(frames_tensor, mask_tensor)
         loss.backward()
@@ -43,7 +48,7 @@ class Model(object):
         return loss.detach().cpu().numpy()
 
     def test(self, frames, mask):
-        frames_tensor = torch.FloatTensor(frames).to(self.configs.device)
-        mask_tensor = torch.FloatTensor(mask).to(self.configs.device)
+        frames_tensor = torch.FloatTensor(frames).to(self.device)
+        mask_tensor = torch.FloatTensor(mask).to(self.device)
         next_frames, _ = self.network(frames_tensor, mask_tensor)
         return next_frames.detach().cpu().numpy()

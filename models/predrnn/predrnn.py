@@ -14,6 +14,11 @@ class PredRNN(nn.Module):
         self.num_hidden = cfg.model.num_hidden
         self.num_layers = len(self.num_hidden)
         cell_list = []
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+
 
         width = cfg.dataset.img_width // cfg.model.patch_size
         self.MSE_criterion = nn.MSELoss()
@@ -42,11 +47,11 @@ class PredRNN(nn.Module):
         c_t = []
 
         for i in range(self.num_layers):
-            zeros = torch.zeros([batch, self.num_hidden[i], height, width]).to(self.cfg.train.device)
+            zeros = torch.zeros([batch, self.num_hidden[i], height, width]).to(self.device)
             h_t.append(zeros)
             c_t.append(zeros)
 
-        memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(self.cfg.train.device)
+        memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(self.device)
 
         for t in range(self.cfg.dataset.num_frames - 1):
             # reverse schedule sampling

@@ -46,7 +46,7 @@ class UnetTrainer(BaseTrainer):
         super().train()
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
-        device = next(self.net.parameters()).device
+        device = self.device
 
 
         global_step = 0
@@ -66,7 +66,7 @@ class UnetTrainer(BaseTrainer):
             epoch_loss = 0
             # train
             for X in tqdm(self.train_loader, ncols=100):
-                X = X.to(device=device, dtype=torch.float32)
+                X = X.to(device=self.device, dtype=torch.float32)
                 input_num=self.cfg.model.input_num
                 total_num=X.shape[1]
                 for t in range(input_num, total_num):
@@ -99,13 +99,13 @@ class UnetTrainer(BaseTrainer):
 
     def eval(self) -> float:
         super().eval()
-        device = next(self.net.parameters()).device
+        device = self.device
 
         self.net.eval()
         epoch_loss = 0 
         
         for X in tqdm(self.val_loader, ncols=100):
-            X = X.to(device=device, dtype=torch.float32)
+            X = X.to(device=self.device, dtype=torch.float32)
             input_num=self.cfg.model.input_num
             total_num=X.shape[1]
             for t in range(input_num,total_num):
@@ -124,16 +124,16 @@ class UnetTrainer(BaseTrainer):
         """
         save generated image sequences as gif file
         """
-        device = next(self.net.parameters()).device
+        device = self.device
         self.net.eval()
         draw_grey = self.cfg.dataset.grey_scale
         for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
-            X = X.to(device=device, dtype=torch.float32)
+            X = X.to(device=self.device, dtype=torch.float32)
             input_num = self.cfg.model.input_num
             batch_size, total_num, height, width=X.shape
-            preds=torch.empty(batch_size, 0, height, width).to(device=device)
+            preds=torch.empty(batch_size, 0, height, width).to(device=self.device)
             input_X = X[:,0:input_num]
             for t in range(input_num,total_num):
                 with torch.no_grad():

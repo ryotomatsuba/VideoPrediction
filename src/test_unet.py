@@ -16,7 +16,11 @@ def test(cfg):
     dataset = MnistDataset(cfg)
     test_loader = DataLoader(dataset, batch_size=cfg.test.batch_size, shuffle=False, num_workers=cfg.test.num_workers, pin_memory=True, drop_last=True)
     # define model
-    device = torch.device(cfg.test.device)
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
     net = UNet(n_channels=4, n_classes=1, bilinear=True)
     net.to(device=device)
     net.load_state_dict(
@@ -24,7 +28,6 @@ def test(cfg):
     )
     logging.info(f'Model loaded from {cfg.test.load_model}')
     net.eval()
-    device = next(net.parameters()).device
 
     X = iter(test_loader).__next__()
     X = X.to(device=device, dtype=torch.float32)

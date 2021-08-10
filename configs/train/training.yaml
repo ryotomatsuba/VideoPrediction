@@ -3,7 +3,6 @@
 name: training
 epochs: 30
 batch_size: 16
-device: cuda:2
 save_best_ckpt: True
 num_save_images: 3  # of images saved per checkpoint
 num_workers: 16

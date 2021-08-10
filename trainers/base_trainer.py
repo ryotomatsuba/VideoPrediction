@@ -6,7 +6,6 @@ from abc import ABC
 from matplotlib.pyplot import draw
 from omegaconf import DictConfig,ListConfig
 from mlflow.tracking import MlflowClient
-from torch._C import device
 from torch.utils.data import DataLoader,random_split
 import mlflow
 import torch
@@ -81,12 +80,16 @@ class BaseTrainer(ABC):
         self.mlwriter=MlflowWriter(cfg.experiment.name,cfg.mlrun_path)
         self.loss={"train": [], "val": []}
         self.cfg = cfg
+        # set device
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
         # load model params
-        device = torch.device(cfg.train.device)
         if cfg.model.load:
-            self.net.load_state_dict(torch.load(cfg.model.load, map_location=device))
+            self.net.load_state_dict(torch.load(cfg.model.load, map_location=self.device))
             logging.info(f'Model loaded from {cfg.model.load}')
-        self.net.to(device=device)
+        self.net.to(device=self.device)
         self.log_params()
         self.set_dataloader()
         

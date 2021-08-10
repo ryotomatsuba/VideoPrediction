@@ -44,7 +44,6 @@ class PredRNNTrainer(BaseTrainer):
         super().train()
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
-        device = next(self.net.parameters()).device
         iteration = 0
 
         logging.info('Starting training')
@@ -60,13 +59,13 @@ class PredRNNTrainer(BaseTrainer):
             # train
             for X in tqdm(self.train_loader, ncols=100):
                 X=preprocess.reshape_patch(X, self.cfg.model.patch_size)
-                X = X.to(device=device, dtype=torch.float32)
+                X = X.to(device=self.device, dtype=torch.float32)
                 if self.cfg.sampling.reverse_scheduled_sampling == 1:
                     real_input_flag = self.reserve_schedule_sampling_exp(iteration)
                 else:
                     eta, real_input_flag = self.schedule_sampling(eta, iteration)
 
-                mask_tensor = torch.FloatTensor(real_input_flag).to(device)
+                mask_tensor = torch.FloatTensor(real_input_flag).to(self.device)
                 optimizer.zero_grad()
                 _, loss = self.net(X, mask_tensor)
                 loss.backward()
@@ -94,7 +93,6 @@ class PredRNNTrainer(BaseTrainer):
 
     def eval(self) -> float:
         super().eval()
-        device = next(self.net.parameters()).device
 
         self.net.eval()
         epoch_loss = 0 
@@ -115,8 +113,8 @@ class PredRNNTrainer(BaseTrainer):
             real_input_flag[:, :self.cfg.model.input_num - 1, :, :] = 1.0
         for X in tqdm(self.val_loader, ncols=100):    
             X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
-            X = torch.FloatTensor(X).to(device)
-            mask_tensor = torch.FloatTensor(real_input_flag).to(device)
+            X = torch.FloatTensor(X).to(self.device)
+            mask_tensor = torch.FloatTensor(real_input_flag).to(self.device)
             with torch.no_grad():
                 _, loss= self.net(X, mask_tensor)
             epoch_loss += loss.item()
@@ -131,7 +129,7 @@ class PredRNNTrainer(BaseTrainer):
         """
         save generated image sequences as gif file
         """
-        device = next(self.net.parameters()).device
+        device = self.device
         self.net.eval()
         if self.cfg.sampling.reverse_scheduled_sampling == 1:
             mask_input = 1
@@ -152,8 +150,8 @@ class PredRNNTrainer(BaseTrainer):
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
             X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
-            X = torch.FloatTensor(X).to(device)
-            mask_tensor = torch.FloatTensor(real_input_flag).to(device)
+            X = torch.FloatTensor(X).to(self.device)
+            mask_tensor = torch.FloatTensor(real_input_flag).to(self.device)
             with torch.no_grad():
                 img_gen, _= self.net(X, mask_tensor)
             img_gen = img_gen.detach().cpu().numpy() 
