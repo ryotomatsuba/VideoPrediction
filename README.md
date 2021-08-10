@@ -1,6 +1,14 @@
-# 実験テンプレート
+# VideoPrediction
 
-## run training
+## Set up environment
+
+```sh
+sh docker/build.sh
+sh docker/run.sh
+sh docker/exec.sh
+```
+
+## Run training
 
 1. set `configs/default.yaml`
 2. run `train.py`
