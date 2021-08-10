@@ -2,7 +2,6 @@
 name: development
 epochs: 1
 batch_size: 2
-device: cuda:3
 save_best_ckpt: True
 num_save_images: 1  # of images saved per checkpoint
 num_workers: 2

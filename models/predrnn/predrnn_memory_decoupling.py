@@ -18,6 +18,11 @@ class PredRNN(nn.Module):
         self.num_layers = num_layers
         self.num_hidden = num_hidden
         cell_list = []
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+
 
         width = configs.img_width // configs.patch_size
         self.MSE_criterion = nn.MSELoss()
@@ -56,13 +61,13 @@ class PredRNN(nn.Module):
         decouple_loss = []
 
         for i in range(self.num_layers):
-            zeros = torch.zeros([batch, self.num_hidden[i], height, width]).to(self.configs.device)
+            zeros = torch.zeros([batch, self.num_hidden[i], height, width]).to(self.device)
             h_t.append(zeros)
             c_t.append(zeros)
             delta_c_list.append(zeros)
             delta_m_list.append(zeros)
 
-        memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(self.configs.device)
+        memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(self.device)
 
         for t in range(self.configs.total_length - 1):
 
