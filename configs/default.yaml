@@ -1,7 +1,7 @@
 defaults:
  - dataset: moving_mnist
  - train: development
- - model: predrnn
+ - model: unet
  - sampling: default
 
 mlrun_path: /home/data/ryoto/Result/mlruns/
