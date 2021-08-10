@@ -7,7 +7,7 @@ docker run \
   -dit \
   --gpus all \
   -v $PWD:/workspace \
-  -v /home/data/ryoto:/data \
+  -v /home/p1252/data/:/data \
   --name $CONTAINER_NAME \
   --rm \
   --shm-size=2g \
