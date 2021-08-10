@@ -1,7 +1,5 @@
 import torch
 import numpy as np
-import seaborn as sns
-sns.set()
 import cv2
 from math import *
 from scipy import signal
