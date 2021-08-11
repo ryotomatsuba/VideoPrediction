@@ -4,7 +4,7 @@ defaults:
  - model: unet
  - sampling: default
 
-mlrun_path: /home/data/ryoto/Result/mlruns/
+mlrun_path: /data/Result/mlruns/
 experiment:
   name: ${model.name} ${train.name}
 
