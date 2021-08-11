@@ -38,13 +38,13 @@ python train.py
 If you are not using docker, you may need to run the following command beforehand.
 
 ```sh
-export CUDA_VISIBLE_DEVICES="0"
+export CUDA_VISIBLE_DEVICES="0" # or 1,2
 export PYTHONPATH=$PYTHONPATH:$PWD
 ```
 
 ## Visualize results
 
 ```sh
-cd /home/data/ryoto/Result
+cd /data/Result/
 mlflow ui
 ```
