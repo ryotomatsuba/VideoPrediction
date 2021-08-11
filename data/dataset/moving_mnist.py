@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+import urllib.request
+from io import BytesIO
 import cv2
 from math import *
 from scipy import signal
@@ -36,7 +38,11 @@ def mv_mnist(num_sample, num_frames=10, choice=["transition", "rotation", "growt
     num_sample: number of data
     choice: which motion to use (transition, rotation, growth_decay)
     """
-    mnist = np.load("/home/data/ryoto/Datasets/row/mnist.npz")['X'].reshape(60000, 28, 28)
+
+    req = urllib.request.Request('https://storage.googleapis.com/tensorflow/tf-keras-datasets/mnist.npz')
+    with urllib.request.urlopen(req) as response:
+        data = response.read()
+        mnist = np.load(BytesIO(data),allow_pickle=True)['x_train'].reshape(60000, 28, 28)
     mnist_num, mnist_h, mnist_w = mnist.shape
     output_h, output_w = 128, 128 
     seeds = np.arange(0, num_sample, 1)
