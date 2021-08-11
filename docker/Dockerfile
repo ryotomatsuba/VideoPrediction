@@ -34,7 +34,7 @@ RUN apt-get update && \
     build-essential \
     unzip \
     libopencv-dev \
-    fish \
+    zsh \
     fonts-powerline \
     python3.9 \
     python3-pip && \
