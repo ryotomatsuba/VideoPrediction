@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# Run fish shell in the docker container.
+# Run zsj shell in the docker container.
 
 . docker/env.sh
 docker exec \
   -it \
-  $CONTAINER_NAME sudo fish
+  $CONTAINER_NAME sudo zsh

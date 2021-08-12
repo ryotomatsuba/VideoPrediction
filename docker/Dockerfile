@@ -34,7 +34,7 @@ RUN apt-get update && \
     build-essential \
     unzip \
     libopencv-dev \
-    fish \
+    zsh \
     fonts-powerline \
     python3.9 \
     python3-pip && \
@@ -64,11 +64,5 @@ RUN addgroup --gid $GROUP_ID $USERNAME && \
     adduser $USERNAME sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USERNAME
-
-#dotfiles
-ENV DOTFILES_PATH /home/${USERNAME}/dotfiles
-RUN git clone https://github.com/tomoino/dotfiles.git $DOTFILES_PATH && \
-    chown -R ${USERNAME}:${USERNAME} $DOTFILES_PATH && \
-    sudo sh $DOTFILES_PATH/init_docker.sh
 
 WORKDIR /workspace
