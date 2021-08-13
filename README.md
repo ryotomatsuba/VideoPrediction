@@ -15,7 +15,7 @@ sh docker/exec.sh
 After attaching to docker container, you should install appropriate version of Pytorch for your cuda environment.
 Check <https://pytorch.org/get-started/locally/>
 
-## Set Proxy
+### Set Proxy (optional)
 
 If you are using wni server (pt-sh.wni.co.jp), you need to set up a proxy.
 
