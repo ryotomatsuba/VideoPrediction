@@ -90,6 +90,7 @@ class BaseTrainer(ABC):
             self.net.load_state_dict(torch.load(cfg.model.load, map_location=self.device))
             logging.info(f'Model loaded from {cfg.model.load}')
         self.net.to(device=self.device)
+        log.info(f"{cfg.model.name} network is ready")
         self.log_params()
         self.set_dataloader()
         
