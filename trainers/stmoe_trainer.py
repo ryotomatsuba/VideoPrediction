@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Unet Trainer"""
-from models.unet import UNet
+"""STMoE Trainer"""
+import trainers
+from models.stmoe import STMoE
 import logging
 import torch.nn as nn
 import torch
@@ -10,12 +11,14 @@ import numpy as np
 from trainers.base_trainer import BaseTrainer
 from data.dataset import MnistDataset,ActionDataset
 from utils.draw import save_gif
+from omegaconf import DictConfig
+import unittest
 
 log = logging.getLogger(__name__)
 
 
-class UnetTrainer(BaseTrainer):
-    """Unet Trainer
+class STMoETrainer(BaseTrainer):
+    """STMoE Trainer
     
     Attributes:
         self.cfg: Config of project.
@@ -29,11 +32,7 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.net = UNet(n_channels=cfg.model.input_num, n_classes=1, bilinear=True) # define model
-        logging.info(f'Network:\n'
-                    f'\t{self.net.n_channels} input channels\n'
-                    f'\t{self.net.n_classes} output channels (classes)\n'
-                    f'\t{"Bilinear" if self.net.bilinear else "Transposed conv"} upscaling')
+        self.net = STMoE(input_num=cfg.model.input_num,n_expert=2) # define model
         super().__init__(cfg)
 
     def train(self) -> None:
@@ -46,7 +45,6 @@ class UnetTrainer(BaseTrainer):
         super().train()
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
-        device = self.device
 
 
         global_step = 0
@@ -54,7 +52,7 @@ class UnetTrainer(BaseTrainer):
         logging.info('Starting training')
 
         optimizer = optim.RMSprop(self.net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min' if self.net.n_classes > 1 else 'max', patience=2)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2)
 
         self.criterion = nn.MSELoss()
 
@@ -70,7 +68,7 @@ class UnetTrainer(BaseTrainer):
                 input_num=self.cfg.model.input_num
                 total_num=X.shape[1]
                 for t in range(input_num, total_num):
-                    pred = self.net(X[:,t-input_num:t])
+                    pred, weight = self.net(X[:,t-input_num:t])
                     loss = self.criterion(pred, X[:,[t]])
                     epoch_loss += loss.item()
                     optimizer.zero_grad()
@@ -110,7 +108,7 @@ class UnetTrainer(BaseTrainer):
             total_num=X.shape[1]
             for t in range(input_num,total_num):
                 with torch.no_grad():
-                    pred = self.net(X[:,t-input_num:t])
+                    pred, weight= self.net(X[:,t-input_num:t])
                 loss = self.criterion(pred, X[:,[t]])
                 epoch_loss += loss.item()
 
@@ -137,8 +135,46 @@ class UnetTrainer(BaseTrainer):
             input_X = X[:,0:input_num]
             for t in range(input_num,total_num):
                 with torch.no_grad():
-                    pred = self.net(input_X)
+                    pred, weight = self.net(input_X)
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
             X, preds = X.to(device="cpu"), preds.to(device="cpu")
             super().save_gif(X, preds, epoch, phase)
+
+
+
+class Test(unittest.TestCase):
+    def test(self):
+        cfg={
+            "experiment":{"name":"test"},
+            "dataset":{
+                "num_data":10,
+                "num_frames": 5,
+                "max_intensity": 1,
+                "motions":["transition", "rotation", "growth_decay"]
+            },
+            "train":{
+                "epochs": 1,
+                "batch_size": 2,
+                "save_best_ckpt": True,
+                "num_save_images": 1,
+                "num_workers": 2,
+                "ckpt_path": "best_ckpt.pth",
+                "lr": 0.0001,
+                "val_percent": 0.1,
+
+            },
+            "model":{
+                "name": "unet",
+                "input_num": 4,
+                "load": False
+            }
+        }
+        cfg=DictConfig(cfg)
+        trainer = STMoETrainer(cfg)
+        trainer.train()
+
+
+if __name__=="__main__":
+    unittest.main()
+    
