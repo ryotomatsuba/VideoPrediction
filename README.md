@@ -27,14 +27,13 @@ export no_proxy=localhost,127.0.0.1
 2. run `train.py`
 
 ```sh
-python train.py
+python3 train.py
 ```
 
-If you are not using docker, you may need to run the following command beforehand.
+When you want to use a GPU other than number 0 run the following command beforehand.
 
 ```sh
-export CUDA_VISIBLE_DEVICES="0" # or 1,2
-export PYTHONPATH=$PYTHONPATH:$PWD
+export CUDA_VISIBLE_DEVICES="1" # or 2, 3
 ```
 
 ## Visualize results
