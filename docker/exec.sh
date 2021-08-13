@@ -5,4 +5,4 @@
 . docker/env.sh
 docker exec \
   -it \
-  $CONTAINER_NAME sudo zsh
+  $CONTAINER_NAME bash
