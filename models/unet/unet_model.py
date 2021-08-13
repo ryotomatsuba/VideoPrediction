@@ -2,7 +2,8 @@
 
 import torch.nn.functional as F
 
-from .unet_parts import *
+from models.unet.unet_parts import *
+import unittest
 
 
 class UNet(nn.Module):
@@ -36,3 +37,17 @@ class UNet(nn.Module):
         x = self.up4(x, x1)
         logits = self.outc(x)
         return logits
+   
+
+class Test(unittest.TestCase):
+    def test(self):
+        net=UNet(n_channels=1, n_classes=1)
+        input = torch.rand(8,1,128,128)
+        output = net(input)
+        print(output)
+
+
+
+if __name__=="__main__":
+    unittest.main()
+
