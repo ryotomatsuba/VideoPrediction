@@ -24,6 +24,10 @@ RUN apt-get update && \
     apt-get install -y software-properties-common && \
     apt-add-repository ppa:fish-shell/release-3 && \
     apt-add-repository ppa:deadsnakes/ppa && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* 
+
+RUN apt-get update && \
     apt-get install -y \
     curl \
     git \
@@ -35,6 +39,7 @@ RUN apt-get update && \
     unzip \
     libopencv-dev \
     zsh \
+    tmux \
     fonts-powerline \
     python3.9 \
     python3-pip && \
