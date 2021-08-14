@@ -61,40 +61,45 @@ def draw_image(gt_images,pd_images,save_path="result.png",suptitle=""):
     plt.savefig(save_path)
     plt.close()
 
-def save_weight_gif(weights,start,save_path="weights.gif",suptitle="weights",interval = 500):
+def save_weight_gif(pd_images,weights,save_path="weights.gif",suptitle="weights",interval = 500, greyscale=False):
     """
     params:
-        weights: numpy.ndarray Gating Networkの出力
-                (frame,height,width,expert)
+        pd_images:(frame,width,hight)
+        weights: Gating Networkの出力 (frame,expert,height,width,)
 
     """
-    experts = ['translation', 'rotation', 'growth/decay']
+    num_frame, num_expert, height, width = weights.shape
+    assert len(pd_images)==num_frame
+    if num_expert<3:
+        # add channel
+        add_channel=np.zeros((num_frame,3-num_expert,height,width))
+        w_images=np.concatenate((weights,add_channel),axis=1)
+        w_images = w_images.transpose(0,2,3,1)
+
     vmin=0
     vmax=np.max(weights)
-    def update(i, ax1, ax2, ax3):
-        ax1.set_title(f'{experts[0]}_{start+i}') 
-        ax1.imshow(weights[i, :, :, 0], vmin = vmin, vmax = vmax, cmap = 'jet') 
-        ax2.set_title(f'{experts[1]}_{start+i}')
-        ax2.imshow(weights[i, :, :, 1], vmin=vmin , vmax = vmax, cmap = 'jet')
-        ax3.set_title(f'{experts[2]}_{start+i}')
-        ax3.imshow(weights[i, :, :, 2], vmin=vmin , vmax = vmax, cmap = 'jet')
+    cmap = 'Greys_r' if greyscale else 'jet'
+   
+    def update(i, ax1, ax2):
+        ax1.set_title(f'pd{i}') 
+        ax1.imshow(pd_images[i], vmin = vmin, vmax = vmax, cmap = cmap) 
+        ax2.set_title(f'w{i}')
+        ax2.imshow(w_images[i], vmin=vmin , vmax = vmax, cmap = cmap)
 
-    fig, (ax1, ax2, ax3) = plt.subplots(1,3)  
+    fig, (ax1, ax2) = plt.subplots(1,2)  
     fig.suptitle(suptitle)
-    im3=ax3.imshow(np.zeros_like(weights[0, :, :, 2]), vmin=vmin , vmax = vmax, cmap = 'jet')
-    divider = make_axes_locatable(ax3)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im3,cax=cax)
-    ani = animation.FuncAnimation(fig, update, fargs = (ax1, ax2, ax3), interval = interval, frames = len(weights))
+    ani = animation.FuncAnimation(fig, update, fargs = (ax1, ax2), interval = interval, frames = num_frame)
     ani.save(save_path, writer = 'imagemagick')
     plt.close()
+
 
 
 import unittest
 class Test(unittest.TestCase):
     def test_weight_gif(self):
-        W = np.load("/home/lab/ryoto/src/STMoE_experiments/test/W.npy")
-        save_weight_gif(W[0],4,save_path="weights_3.gif",suptitle="weights:epoch=3")
+        pd_images = np.random.rand(6,128,128)
+        weights = np.random.rand(6,2,128,128)
+        save_weight_gif(pd_images,weights)
     
     def test_save_gif(self):
         gt_images = np.random.rand(20,128,128)
