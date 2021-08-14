@@ -11,7 +11,7 @@ import mlflow
 import torch
 from torch.nn.modules import loss
 from data.dataset import get_dataset
-from utils.draw import save_gif
+from utils.draw import save_gif, save_weight_gif
 
 
 log = logging.getLogger(__name__)
@@ -177,4 +177,13 @@ class BaseTrainer(ABC):
         for i in range(num_save_images):
             save_gif(gt_images[i], pd_images[i], save_path = f"pred_{phase}_{epoch}({i}).gif", suptitle=f"{phase}_{epoch}",greyscale=draw_grey)
             self.log_artifact(f"pred_{phase}_{epoch}({i}).gif")
+    
+    def save_weight_gif(self,pd_images,weights,epoch,phase):
+        num_save_images=self.cfg.train.num_save_images
+        draw_grey=self.cfg.dataset.grey_scale
+        if num_save_images>self.cfg.train.batch_size:
+            num_save_images=self.cfg.train.batch_size
+        for i in range(num_save_images):
+            save_weight_gif(pd_images[i],weights[i], save_path = f"weight_{phase}_{epoch}({i}).gif", suptitle=f"{phase}_{epoch}",greyscale=draw_grey)
+            self.log_artifact(f"weight_{phase}_{epoch}({i}).gif")
 

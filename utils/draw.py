@@ -77,14 +77,15 @@ def save_weight_gif(pd_images,weights,save_path="weights.gif",suptitle="weights"
         w_images = w_images.transpose(0,2,3,1)
 
     vmin=0
-    vmax=np.max(weights)
+    pd_images=np.array(pd_images)
+    vmax=np.max(pd_images)
     cmap = 'Greys_r' if greyscale else 'jet'
    
     def update(i, ax1, ax2):
         ax1.set_title(f'pd{i}') 
         ax1.imshow(pd_images[i], vmin = vmin, vmax = vmax, cmap = cmap) 
         ax2.set_title(f'w{i}')
-        ax2.imshow(w_images[i], vmin=vmin , vmax = vmax, cmap = cmap)
+        ax2.imshow(w_images[i])
 
     fig, (ax1, ax2) = plt.subplots(1,2)  
     fig.suptitle(suptitle)

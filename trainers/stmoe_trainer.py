@@ -10,7 +10,6 @@ from tqdm import tqdm
 import numpy as np
 from trainers.base_trainer import BaseTrainer
 from data.dataset import MnistDataset,ActionDataset
-from utils.draw import save_gif
 from omegaconf import DictConfig
 import unittest
 
@@ -130,15 +129,20 @@ class STMoETrainer(BaseTrainer):
             X = iter(data_loader).__next__()
             X = X.to(device=self.device, dtype=torch.float32)
             input_num = self.cfg.model.input_num
+            num_expert = self.cfg.model.num_expert
             batch_size, total_num, height, width=X.shape
             preds=torch.empty(batch_size, 0, height, width).to(device=self.device)
+            weights=torch.empty(batch_size, 0, num_expert, height, width).to(device=self.device)
+
             input_X = X[:,0:input_num]
             for t in range(input_num,total_num):
                 with torch.no_grad():
                     pred, weight = self.net(input_X)
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
-            X, preds = X.to(device="cpu"), preds.to(device="cpu")
+                weights=torch.cat((weights,weight[:,np.newaxis]),dim=1) 
+            X, preds, weights= X.to(device="cpu"), preds.to(device="cpu"), weights.to(device="cpu")
+            super().save_weight_gif(preds,weights, epoch, phase)
             super().save_gif(X, preds, epoch, phase)
 
 
