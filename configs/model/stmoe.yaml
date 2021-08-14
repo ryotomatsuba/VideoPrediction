@@ -3,3 +3,6 @@
 name: stmoe
 input_num: 4
 load: False
+num_expert: 2
+expert1: unet
+expert2: unet
