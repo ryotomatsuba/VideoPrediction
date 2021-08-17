@@ -31,7 +31,7 @@ class STMoETrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.net = STMoE(input_num=cfg.model.input_num,n_expert=2,training=cfg.model.training) # define model
+        self.net = STMoE(input_num=cfg.model.input_num,n_expert=2,train_model=cfg.model.train_model) # define model
         super().__init__(cfg)
 
     def train(self) -> None:
@@ -141,7 +141,6 @@ class STMoETrainer(BaseTrainer):
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
                 weights=torch.cat((weights,weight[:,np.newaxis]),dim=1) 
-            X, preds, weights= X.to(device="cpu"), preds.to(device="cpu"), weights.to(device="cpu")
             super().save_weight_gif(preds,weights, epoch, phase)
             super().save_gif(X, preds, epoch, phase)
 

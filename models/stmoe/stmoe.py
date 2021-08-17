@@ -10,22 +10,22 @@ class STMoE(nn.Module):
         input_num: number of frames to input
         n_channels: image channels. if color image, set this 3
         n_expert: number of expert
-        training: which model to train expert1, expert2, gating or all
+        train_model: which model to train expert1, expert2, gating or all
 
     """
-    def __init__(self,input_num=4, n_channels=1, n_expert=2, training="all"):
+    def __init__(self,input_num=4, n_channels=1, n_expert=2, train_model="all"):
         super(STMoE, self).__init__()
         self.n_expert = n_expert
         self.n_channels = n_channels
-        assert training in ["expert1", "expert2", "gating","all"]
-        self.training = training
+        assert train_model in ["expert1", "expert2", "gating","all"]
+        self.train_model = train_model
         # define expert
         self.expert1=UNet(n_channels=input_num,n_classes=n_channels)
         self.expert2=UNet(n_channels=input_num,n_classes=n_channels)
         # define gating
         self.gating=UNet(n_channels=input_num,n_classes=n_expert)
         # fix expert parameters
-        if training=="gating":
+        if train_model=="gating":
             self.fix_experts()
 
     def fix_experts(self):
@@ -51,9 +51,9 @@ class STMoE(nn.Module):
         batch, input_num, h ,w = x.shape
         ones=torch.ones((batch,1, h ,w))
         zeros=torch.zeros(batch,1, h ,w)
-        if self.training=="expert1":
+        if self.train_model=="expert1":
             gating_weight = torch.cat([ones,zeros],axis = 1)
-        elif self.training=="expert2":
+        elif self.train_model=="expert2":
             gating_weight = torch.cat([zeros,ones],axis = 1)
         else:
             gating_weight = self.gating(x)
@@ -72,19 +72,19 @@ class Test(unittest.TestCase):
         super().__init__(methodName=methodName)
 
     def test_all(self):
-        net=STMoE(training="all")
+        net=STMoE(train_model="all")
         pred, weight = net(self.input)
         self.check_shape(pred, weight)
         self.save_gif(pred,weight)
 
     def test_gating(self):
-        net=STMoE(training="gating")
+        net=STMoE(train_model="gating")
         pred, weight = net(self.input)
         self.check_shape(pred, weight)
         self.save_gif(pred,weight)
 
     def test_expert_training(self):
-        net=STMoE(training="expert2")
+        net=STMoE(train_model="expert2")
         pred, weight = net(self.input)
         self.check_shape(pred, weight)
         self.save_gif(pred,weight,save_name="expert.gif")
