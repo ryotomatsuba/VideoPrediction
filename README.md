@@ -30,6 +30,13 @@ export no_proxy=localhost,127.0.0.1
 python3 train.py
 ```
 
+or you can also use command line args to set parameters.
+for example,
+
+```sh
+python3 train.py model.training=expert1 dataset.num_data=1000
+```
+
 When you want to use a GPU other than number 0 run the following command beforehand.
 
 ```sh
