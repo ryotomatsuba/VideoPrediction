@@ -69,5 +69,5 @@ RUN addgroup --gid $GROUP_ID $USERNAME && \
     adduser $USERNAME sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USERNAME
-COPY docker/dotfiles/* ~/
+COPY docker/dotfiles/* /home/duser/
 WORKDIR /workspace
