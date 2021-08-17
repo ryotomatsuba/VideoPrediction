@@ -53,7 +53,7 @@ class STMoE(nn.Module):
         zeros=torch.zeros(batch,1, h ,w)
         if self.training=="expert1":
             gating_weight = torch.cat([ones,zeros],axis = 1)
-        if self.training=="expert2":
+        elif self.training=="expert2":
             gating_weight = torch.cat([zeros,ones],axis = 1)
         else:
             gating_weight = self.gating(x)
@@ -63,20 +63,44 @@ class STMoE(nn.Module):
         pred = pred[:,np.newaxis,:,:] # add channel axis
         return pred, gating_weight
     
-
+from utils.draw import save_weight_gif
 class Test(unittest.TestCase):
-    def test(self):
-        for training in ["all","expert1","expert2","gating"]:
-            self._test_training_param(training)
+    def __init__(self, methodName: str) -> None:
+        self.batch, input_num, self.h ,self.w = 2, 4, 128, 128
+        self.n_expert=2
+        self.input = torch.rand(self.batch, input_num, self.h ,self.w)
+        super().__init__(methodName=methodName)
+
+    def test_all(self):
+        net=STMoE(training="all")
+        pred, weight = net(self.input)
+        self.check_shape(pred, weight)
+        self.save_gif(pred,weight)
+
+    def test_gating(self):
+        net=STMoE(training="gating")
+        pred, weight = net(self.input)
+        self.check_shape(pred, weight)
+        self.save_gif(pred,weight)
+
+    def test_expert_training(self):
+        net=STMoE(training="expert2")
+        pred, weight = net(self.input)
+        self.check_shape(pred, weight)
+        self.save_gif(pred,weight,save_name="expert.gif")
     
-    def _test_training_param(self,training="all"):
-        net=STMoE(training=training)
-        n_expert=2
-        batch, input_num, h ,w = 1, 4, 128, 128
-        input = torch.rand(batch, input_num, h ,w)
-        pred, weight = net(input)
-        self.assertEqual(list(pred.shape),[batch, 1 ,h ,w])
-        self.assertEqual(list(weight.shape),[batch,n_expert ,h ,w])
+    def check_shape(self,pred,weight):
+        self.assertEqual(list(pred.shape),[self.batch, 1 ,self.h ,self.w])
+        self.assertEqual(list(weight.shape),[self.batch,self.n_expert ,self.h ,self.w])
+    
+    def save_gif(self,pred,weight,save_name="result.gif"):
+        preds=torch.cat((pred,pred),dim=1) 
+        weights=torch.cat((weight[:,np.newaxis],weight[:,np.newaxis]),dim=1) 
+        save_weight_gif(preds[0],weights[0],save_name)
+
+
+           
+
 
 
 
