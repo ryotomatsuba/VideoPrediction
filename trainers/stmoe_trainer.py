@@ -31,7 +31,7 @@ class STMoETrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.net = STMoE(input_num=cfg.model.input_num,n_expert=2) # define model
+        self.net = STMoE(input_num=cfg.model.input_num,n_expert=2,training=cfg.model.training) # define model
         super().__init__(cfg)
 
     def train(self) -> None:

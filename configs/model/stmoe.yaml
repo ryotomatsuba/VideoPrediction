@@ -4,5 +4,6 @@ name: stmoe
 input_num: 4
 load: False
 num_expert: 2
+training: all # which model to train expert1, expert2, gating or all
 expert1: unet
 expert2: unet
