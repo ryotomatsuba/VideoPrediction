@@ -34,7 +34,7 @@ or you can also use command line args to set parameters.
 for example,
 
 ```sh
-python3 train.py model.training=expert1 dataset.num_data=1000
+python3 train.py model.train_model=expert1 dataset.num_data=1000
 ```
 
 When you want to use a GPU other than number 0 run the following command beforehand.
