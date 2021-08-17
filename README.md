@@ -40,7 +40,7 @@ python3 train.py model.training=expert1 dataset.num_data=1000
 When you want to use a GPU other than number 0 run the following command beforehand.
 
 ```sh
-export CUDA_VISIBLE_DEVICES="1" # or 2, 3
+export CUDA_VISIBLE_DEVICES="1" # 2, 3, or "" for CPU
 ```
 
 ## Visualize results

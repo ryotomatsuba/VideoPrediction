@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.animation as animation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+import torch
 
 def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 500, greyscale=False):
     """
@@ -12,8 +12,10 @@ def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 5
         gt_imagesは入力+正解の出力
         pd_imagesは予測の出力のみ
     """
-    gt_images=np.array(gt_images)
-    pd_images=np.array(pd_images)
+    if torch.is_tensor(gt_images):
+        gt_images=gt_images.detach().numpy()
+    if torch.is_tensor(pd_images):
+        pd_images=pd_images.detach().numpy()
     vmin=0
     vmax=np.max(gt_images)
     input_length=len(gt_images)-len(pd_images)
@@ -68,6 +70,10 @@ def save_weight_gif(pd_images,weights,save_path="weights.gif",suptitle="weights"
         weights: Gating Networkの出力 (frame,expert,height,width,)
 
     """
+    if torch.is_tensor(pd_images):
+        pd_images=pd_images.detach().numpy()
+    if torch.is_tensor(weights):
+        weights=weights.detach().numpy()
     num_frame, num_expert, height, width = weights.shape
     assert len(pd_images)==num_frame
     if num_expert<3:
@@ -77,7 +83,6 @@ def save_weight_gif(pd_images,weights,save_path="weights.gif",suptitle="weights"
         w_images = w_images.transpose(0,2,3,1)
 
     vmin=0
-    pd_images=np.array(pd_images)
     vmax=np.max(pd_images)
     cmap = 'Greys_r' if greyscale else 'jet'
    
@@ -111,6 +116,14 @@ class Test(unittest.TestCase):
         gt_images = np.random.rand(20,128,128)
         pd_images = np.random.rand(10,128,128)
         save_gif(gt_images,pd_images,save_path="test.gif", greyscale=True,suptitle="grey")
+    
+    def test_torch_tensor(self):
+        gt_images = torch.rand(10,128,128)
+        pd_images = torch.rand(6,128,128)
+        weights = torch.rand(6,2,128,128)
+        save_weight_gif(pd_images,weights)
+        save_gif(gt_images,pd_images,save_path="test.gif",)
+
     
 
 if __name__ == '__main__':
