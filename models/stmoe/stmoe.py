@@ -58,6 +58,8 @@ class STMoE(nn.Module):
         else:
             gating_weight = self.gating(x)
             gating_weight = F.softmax(gating_weight, dim=1)
+        # set gating_weight on gpu 
+        gating_weight = gating_weight.to(x.device)
         pred = gating_weight*torch.cat([pred1,pred2],axis = 1)
         pred = torch.sum(pred,dim=1)
         pred = pred[:,np.newaxis,:,:] # add channel axis

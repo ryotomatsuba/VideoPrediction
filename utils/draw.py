@@ -13,9 +13,9 @@ def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 5
         pd_imagesは予測の出力のみ
     """
     if torch.is_tensor(gt_images):
-        gt_images=gt_images.detach().numpy()
+        gt_images=gt_images.cpu().detach().numpy()
     if torch.is_tensor(pd_images):
-        pd_images=pd_images.detach().numpy()
+        pd_images=pd_images.cpu().detach().numpy()
     vmin=0
     vmax=np.max(gt_images)
     input_length=len(gt_images)-len(pd_images)
@@ -71,9 +71,9 @@ def save_weight_gif(pd_images,weights,save_path="weights.gif",suptitle="weights"
 
     """
     if torch.is_tensor(pd_images):
-        pd_images=pd_images.detach().numpy()
+        pd_images=pd_images.cpu().detach().numpy()
     if torch.is_tensor(weights):
-        weights=weights.detach().numpy()
+        weights=weights.cpu().detach().numpy()
     num_frame, num_expert, height, width = weights.shape
     assert len(pd_images)==num_frame
     if num_expert<3:
