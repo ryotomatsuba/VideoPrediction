@@ -52,11 +52,11 @@ class STMoE(nn.Module):
         zeros=torch.zeros(batch,1, h ,w)
         if self.train_model=="expert1":
             pred1 = self.expert1(x)
-            gating_weight = torch.cat([ones,zeros],axis = 1)
+            gating_weight = torch.cat([ones,zeros],axis = 1).to(device=x.device)
             return pred1, gating_weight
         elif self.train_model=="expert2":
             pred2 = self.expert2(x)
-            gating_weight = torch.cat([zeros,ones],axis = 1)
+            gating_weight = torch.cat([zeros,ones],axis = 1).to(device=x.device)
             return pred2, gating_weight
         elif self.train_model in ["gating","all"]:
             pred1 = self.expert1(x)
@@ -81,6 +81,7 @@ class Test(unittest.TestCase):
 
     def test_all(self):
         net=STMoE(train_model="all")
+        print(net.state_dict().keys())
         pred, weight = net(self.input)
         self.check_shape(pred, weight)
         self.save_gif(pred,weight)
@@ -93,6 +94,7 @@ class Test(unittest.TestCase):
 
     def test_expert_training(self):
         net=STMoE(train_model="expert2")
+        print(net.state_dict().keys())
         pred, weight = net(self.input)
         summary(net,(4,128,128),device="cpu")
         self.check_shape(pred, weight)
