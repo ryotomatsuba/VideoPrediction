@@ -46,25 +46,30 @@ class STMoE(nn.Module):
             pred: next frame prediction. Tensor(batch_size, ch, height, width)
             weight: gating weight. Tensor(batch_size, n_expert, height, width)
         """
-        pred1 = self.expert1(x)
-        pred2 = self.expert2(x)
         # when training expert, gating weight is fixed to 0 or 1
         batch, input_num, h ,w = x.shape
         ones=torch.ones((batch,1, h ,w))
         zeros=torch.zeros(batch,1, h ,w)
         if self.train_model=="expert1":
+            pred1 = self.expert1(x)
             gating_weight = torch.cat([ones,zeros],axis = 1)
+            return pred1, gating_weight
         elif self.train_model=="expert2":
+            pred2 = self.expert2(x)
             gating_weight = torch.cat([zeros,ones],axis = 1)
-        else:
+            return pred2, gating_weight
+        elif self.train_model in ["gating","all"]:
+            pred1 = self.expert1(x)
+            pred2 = self.expert2(x)
             gating_weight = self.gating(x)
             gating_weight = F.softmax(gating_weight, dim=1)
-        # set gating_weight on gpu 
-        gating_weight = gating_weight.to(x.device)
-        pred = gating_weight*torch.cat([pred1,pred2],axis = 1)
-        pred = torch.sum(pred,dim=1)
-        pred = pred[:,np.newaxis,:,:] # add channel axis
-        return pred, gating_weight
+             # set gating_weight on gpu 
+            pred = gating_weight*torch.cat([pred1,pred2],axis = 1)
+            pred = torch.sum(pred,dim=1)
+            pred = pred[:,np.newaxis,:,:] # add channel axis
+            return pred, gating_weight
+        else:
+            raise ValueError("train_model is not correct")
     
 from utils.draw import save_weight_gif
 class Test(unittest.TestCase):
