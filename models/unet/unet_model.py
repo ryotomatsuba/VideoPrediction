@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 from models.unet.unet_parts import *
 import unittest
+from torchsummary import summary
 
 
 class UNet(nn.Module):
@@ -43,6 +44,7 @@ class Test(unittest.TestCase):
     def test(self):
         batch, input_frame, h ,w= 1, 4, 128, 128
         net=UNet(n_channels=input_frame, n_classes=1)
+        summary(net,(4,128,128),device="cpu")
         input = torch.rand(batch, input_frame, h ,w)
         output = net(input)
         self.assertEqual(list(output.shape),[batch, 1 ,h ,w])

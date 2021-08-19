@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch
 import unittest
 import numpy as np
+from torchsummary import summary
 class STMoE(nn.Module):
     """STMoE Network
     Params:
@@ -88,6 +89,7 @@ class Test(unittest.TestCase):
     def test_expert_training(self):
         net=STMoE(train_model="expert2")
         pred, weight = net(self.input)
+        summary(net,(4,128,128),device="cpu")
         self.check_shape(pred, weight)
         self.save_gif(pred,weight,save_name="expert.gif")
     
