@@ -74,7 +74,7 @@ class ActionDataset(Dataset):
             video: numpy array, video sequence. ex: (id, num_frames, h, w)
         """
         videos=[]
-        video_path=f"/home/data/ryoto/Datasets/KTH/avi_data/{action_name}"
+        video_path=f"/data/Datasets/KTH/avi_data/{action_name}"
         video_path=Path(video_path)
         video_paths=video_path.glob("*.avi")
         for video_path in video_paths:
