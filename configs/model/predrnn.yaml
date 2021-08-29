@@ -2,7 +2,7 @@
 
 name: predrnn
 load: False
-input_num: 8
+input_num: 4
 num_hidden: [64,64,64,64]
 filter_size: 5
 stride: 1
