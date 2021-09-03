@@ -2,6 +2,7 @@ import unittest
 import torch
 from hydra.experimental import initialize, compose
 from trainers import UnetTrainer, PredRNNTrainer, STMoETrainer,get_trainer
+from models.predrnn.utils.sampling import schedule_sampling
 import os
 
 class TestTrainer(unittest.TestCase):
@@ -51,14 +52,16 @@ class TestTrainer(unittest.TestCase):
         with initialize(config_path="../configs"):
             self.overrides.append(f"model={model_name}")
             self.cfg = compose(config_name="default", overrides=self.overrides)
-        
-
-
-    
-
 
     def tearDown(self) -> None:
         os.remove(".hydra/config.yaml")
         os.remove("train.log")
         os.remove("best_ckpt.pth")
         os.remove("pred_train_0(0).gif")
+
+
+class TestSampling(unittest.TestCase):
+    def test_sampling(self) -> None:
+        input_shape=(2,4,32,32,16) # batch,input_num,patch_w,patch_h,patch_ch
+        eta, mask_true=schedule_sampling(eta=1.0,itr=0,batch=2,input_num=4,total_length = 10)
+        self.assertEqual(list(mask_true.shape),[2,5])
