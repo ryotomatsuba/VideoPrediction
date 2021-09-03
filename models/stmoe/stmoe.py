@@ -71,50 +71,9 @@ class STMoE(nn.Module):
         else:
             raise ValueError("train_model is not correct")
     
-from utils.draw import save_weight_gif
-class Test(unittest.TestCase):
-    def __init__(self, methodName: str) -> None:
-        self.batch, input_num, self.h ,self.w = 2, 4, 128, 128
-        self.n_expert=2
-        self.input = torch.rand(self.batch, input_num, self.h ,self.w)
-        super().__init__(methodName=methodName)
-
-    def test_all(self):
-        net=STMoE(train_model="all")
-        print(net.state_dict().keys())
-        pred, weight = net(self.input)
-        self.check_shape(pred, weight)
-        self.save_gif(pred,weight)
-
-    def test_gating(self):
-        net=STMoE(train_model="gating")
-        pred, weight = net(self.input)
-        self.check_shape(pred, weight)
-        self.save_gif(pred,weight)
-
-    def test_expert_training(self):
-        net=STMoE(train_model="expert2")
-        print(net.state_dict().keys())
-        pred, weight = net(self.input)
-        summary(net,(4,128,128),device="cpu")
-        self.check_shape(pred, weight)
-        self.save_gif(pred,weight,save_name="expert.gif")
-    
-    def check_shape(self,pred,weight):
-        self.assertEqual(list(pred.shape),[self.batch, 1 ,self.h ,self.w])
-        self.assertEqual(list(weight.shape),[self.batch,self.n_expert ,self.h ,self.w])
-    
-    def save_gif(self,pred,weight,save_name="result.gif"):
-        preds=torch.cat((pred,pred),dim=1) 
-        weights=torch.cat((weight[:,np.newaxis],weight[:,np.newaxis]),dim=1) 
-        save_weight_gif(preds[0],weights[0],save_name)
-
-
-           
-
-
 
 
 
 if __name__=="__main__":
-    unittest.main()
+    model=STMoE(input_num=4, n_channels=1, n_expert=2, train_model="all")
+    summary(model,(4,128,128),device="cpu")
