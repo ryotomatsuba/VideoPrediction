@@ -77,7 +77,8 @@ class PredRNN(nn.Module):
                 h_t[i], c_t[i], memory = self.cell_list[i](h_t[i - 1], h_t[i], c_t[i], memory)
 
             x_gen = self.conv_last(h_t[self.num_layers - 1])
-            next_frames.append(x_gen)
+            if t >= self.input_num-1:
+                next_frames.append(x_gen)
 
         # [length, batch, channel, height, width] -> [batch, length, height, width, channel]
         next_frames = torch.stack(next_frames, dim=0).permute(1, 0, 3, 4, 2).contiguous()
