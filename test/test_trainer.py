@@ -30,6 +30,23 @@ class TestTrainer(unittest.TestCase):
         trainer.train()
         self.assertTrue(os.path.exists("best_ckpt.pth"))
         self.assertTrue(os.path.exists("pred_train_0(0).gif"))
+
+    def test_predrnn_trainer(self)-> None:
+        self.override_model("predrnn")
+        trainer=get_trainer(self.cfg)
+        trainer.train()
+        self.assertTrue(os.path.exists("best_ckpt.pth"))
+        self.assertTrue(os.path.exists("pred_train_0(0).gif"))
+    
+    def test_stmoe_trainer(self)-> None:
+        self.override_model("stmoe")
+        trainer=get_trainer(self.cfg)
+        trainer.train()
+        self.assertTrue(os.path.exists("best_ckpt.pth"))
+        self.assertTrue(os.path.exists("pred_train_0(0).gif"))
+
+
+
     
     def override_model(self, model_name: str) -> None:
         with initialize(config_path="../configs"):
