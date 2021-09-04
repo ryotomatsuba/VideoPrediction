@@ -1,7 +1,7 @@
 import unittest
 import torch
 from hydra.experimental import initialize, compose
-from trainers import UnetTrainer, PredRNNTrainer, STMoETrainer,get_trainer
+from trainers import get_trainer
 from models.predrnn.utils.sampling import schedule_sampling
 import os
 
@@ -58,7 +58,6 @@ class TestTrainer(unittest.TestCase):
         os.remove("train.log")
         os.remove("best_ckpt.pth")
         os.remove("pred_train_0(0).gif")
-
 
 class TestSampling(unittest.TestCase):
     def test_sampling(self) -> None:
