@@ -30,8 +30,7 @@ class TestDataset(unittest.TestCase):
             ]
         self.override_config(args)
         dataset=get_dataset(self.cfg)
-        self.assertEqual(dataset[0].shape,(10,128,128))
-        self.assertEqual(len(dataset),2)
+        self.assertEqual(dataset[:].shape,(2,10,128,128))
         save_gif(dataset[0],dataset[1])
 
     def test_human_action(self):
@@ -41,8 +40,7 @@ class TestDataset(unittest.TestCase):
             ]
         self.override_config(args)
         dataset=get_dataset(self.cfg)
-        self.assertEqual(dataset[0].shape,(10,128,128))
-        self.assertEqual(len(dataset),100)
+        self.assertEqual(dataset[:].shape,(100,10,128,128))
         save_gif(dataset[0],dataset[1],greyscale=True)
 
 
