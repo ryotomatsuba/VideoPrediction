@@ -63,12 +63,7 @@ class PredRNNTrainer(BaseTrainer):
             # train
             for X in tqdm(self.train_loader, ncols=100):
                 X = X.to(device=self.device, dtype=torch.float32)
-                if self.cfg.sampling.reverse_scheduled_sampling == 1:
-                    real_input_flag = self.reserve_schedule_sampling_exp(iteration)
-                else:
-                    eta, mask_tensor = schedule_sampling(eta,iteration,batch=X.shape[0],input_num=4)
-
-                
+                eta, mask_tensor = schedule_sampling(eta,iteration,batch=X.shape[0],input_num=4)
                 self.net.set_mask(mask_tensor)
                 optimizer.zero_grad()
                 next_frames = self.net(X)
@@ -101,13 +96,7 @@ class PredRNNTrainer(BaseTrainer):
 
         self.net.eval()
         epoch_loss = 0 
-        # reverse schedule sampling
-        if self.cfg.sampling.reverse_scheduled_sampling == 1:
-            mask_input = 1
-        else:
-            mask_input = self.cfg.sampling.reverse_scheduled_sampling
-
-        mask_tensor = torch.zeros((self.cfg.train.batch_size,self.cfg.dataset.num_frames - mask_input - 1,1,1,1))
+        mask_tensor = torch.zeros((self.cfg.train.batch_size,self.cfg.dataset.num_frames - self.cfg.model.input_num - 1, 1, 1, 1))
         self.net.set_mask(mask_tensor)
         if self.cfg.sampling.reverse_scheduled_sampling == 1:
             mask_tensor[:, :self.cfg.model.input_num - 1, :, :] = 1.0
@@ -117,8 +106,6 @@ class PredRNNTrainer(BaseTrainer):
                 next_frames = self.net(X)
                 loss = self.criterion(next_frames, X[:, self.cfg.model.input_num:,np.newaxis])
             epoch_loss += loss.item()/len(X[0, self.cfg.model.input_num:]) # loss per frame
-
-
         loss_ave=epoch_loss/len(self.val_loader)
         self.loss["val"].append(loss_ave)
         logging.info(f'Validation MSE: {loss_ave}')
@@ -130,13 +117,7 @@ class PredRNNTrainer(BaseTrainer):
         """
         device = self.device
         self.net.eval()
-        if self.cfg.sampling.reverse_scheduled_sampling == 1:
-            mask_input = 1
-        else:
-            mask_input = self.cfg.sampling.reverse_scheduled_sampling
-
-        mask_true = torch.zeros((self.cfg.train.batch_size,self.cfg.dataset.num_frames - mask_input - 1,1,1,1))
-
+        mask_true = torch.zeros((self.cfg.train.batch_size,self.cfg.dataset.num_frames - self.cfg.model.input_num - 1, 1, 1, 1))
         if self.cfg.sampling.reverse_scheduled_sampling == 1:
             mask_true[:, :self.cfg.model.input_num - 1, :, :] = 1.0
         self.net.set_mask(mask_true)
