@@ -3,12 +3,11 @@
 
 import logging
 from models.predrnn import PredRNN
+from models.predrnn.utils.sampling import schedule_sampling
 import torch
 from trainers.base_trainer import BaseTrainer
-from utils.draw import save_gif
 import torch.nn as nn
 from torch import optim
-from models.predrnn.utils import preprocess
 log = logging.getLogger(__name__)
 import numpy as np
 import math
@@ -30,7 +29,11 @@ class PredRNNTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.net = PredRNN(cfg) # define model
+        self.net = PredRNN(
+            input_num=cfg.model.input_num,total_length=cfg.dataset.num_frames,
+            img_channel=cfg.dataset.img_channel,img_width=cfg.dataset.img_width,
+            patch_size=cfg.model.patch_size,num_hidden=cfg.model.num_hidden ,
+            filter_size=cfg.model.filter_size,stride=cfg.model.stride,layer_norm=cfg.model.layer_norm) # define model
         logging.info('PredRNN Network Ready')
         super().__init__(cfg)
 
@@ -49,6 +52,7 @@ class PredRNNTrainer(BaseTrainer):
         logging.info('Starting training')
 
         optimizer = optim.Adam(self.net.parameters(), lr=lr,)
+        self.criterion = nn.MSELoss()
         for epoch in range(epochs):
 
             logging.info(f'epoch: {epoch}')
@@ -58,26 +62,27 @@ class PredRNNTrainer(BaseTrainer):
             eta = self.cfg.sampling.sampling_start_value
             # train
             for X in tqdm(self.train_loader, ncols=100):
-                X=preprocess.reshape_patch(X, self.cfg.model.patch_size)
                 X = X.to(device=self.device, dtype=torch.float32)
                 if self.cfg.sampling.reverse_scheduled_sampling == 1:
                     real_input_flag = self.reserve_schedule_sampling_exp(iteration)
                 else:
-                    eta, real_input_flag = self.schedule_sampling(eta, iteration)
+                    eta, mask_tensor = schedule_sampling(eta,iteration,batch=X.shape[0],input_num=4)
 
-                mask_tensor = torch.FloatTensor(real_input_flag).to(self.device)
+                
+                self.net.set_mask(mask_tensor)
                 optimizer.zero_grad()
-                _, loss = self.net(X, mask_tensor)
+                next_frames = self.net(X)
+                loss = self.criterion(next_frames, X[:, self.cfg.model.input_num:,np.newaxis])
                 loss.backward()
                 optimizer.step()
-                epoch_loss += loss.item()
+                epoch_loss += loss.item()/len(X[0, self.cfg.model.input_num:]) # loss per frame
                 iteration += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
             logging.info(f'Train MSE     : {loss_ave}')
             # val
             if epoch % 1 == 0: # checkpoint interval
-                val_score = self.eval()
+                self.eval()
                 self.log_metrics(epoch)
 
             # save model if it performes better than it has done before
@@ -102,22 +107,16 @@ class PredRNNTrainer(BaseTrainer):
         else:
             mask_input = self.cfg.sampling.reverse_scheduled_sampling
 
-        real_input_flag = np.zeros(
-            (self.cfg.train.batch_size,
-            self.cfg.dataset.num_frames - mask_input - 1,
-            self.cfg.dataset.img_width // self.cfg.model.patch_size,
-            self.cfg.dataset.img_width // self.cfg.model.patch_size,
-            self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-
+        mask_tensor = torch.zeros((self.cfg.train.batch_size,self.cfg.dataset.num_frames - mask_input - 1,1,1,1))
+        self.net.set_mask(mask_tensor)
         if self.cfg.sampling.reverse_scheduled_sampling == 1:
-            real_input_flag[:, :self.cfg.model.input_num - 1, :, :] = 1.0
+            mask_tensor[:, :self.cfg.model.input_num - 1, :, :] = 1.0
         for X in tqdm(self.val_loader, ncols=100):    
-            X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
             X = torch.FloatTensor(X).to(self.device)
-            mask_tensor = torch.FloatTensor(real_input_flag).to(self.device)
             with torch.no_grad():
-                _, loss= self.net(X, mask_tensor)
-            epoch_loss += loss.item()
+                next_frames = self.net(X)
+                loss = self.criterion(next_frames, X[:, self.cfg.model.input_num:,np.newaxis])
+            epoch_loss += loss.item()/len(X[0, self.cfg.model.input_num:]) # loss per frame
 
 
         loss_ave=epoch_loss/len(self.val_loader)
@@ -136,121 +135,20 @@ class PredRNNTrainer(BaseTrainer):
         else:
             mask_input = self.cfg.sampling.reverse_scheduled_sampling
 
-        real_input_flag = np.zeros(
-            (self.cfg.train.batch_size,
-            self.cfg.dataset.num_frames - mask_input - 1,
-            self.cfg.dataset.img_width // self.cfg.model.patch_size,
-            self.cfg.dataset.img_width // self.cfg.model.patch_size,
-            self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
+        mask_true = torch.zeros((self.cfg.train.batch_size,self.cfg.dataset.num_frames - mask_input - 1,1,1,1))
 
         if self.cfg.sampling.reverse_scheduled_sampling == 1:
-            real_input_flag[:, :self.cfg.model.input_num - 1, :, :] = 1.0
+            mask_true[:, :self.cfg.model.input_num - 1, :, :] = 1.0
+        self.net.set_mask(mask_true)
 
         for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
-            X = preprocess.reshape_patch(X, self.cfg.model.patch_size)
             X = torch.FloatTensor(X).to(self.device)
-            mask_tensor = torch.FloatTensor(real_input_flag).to(self.device)
             with torch.no_grad():
-                img_gen, _= self.net(X, mask_tensor)
+                img_gen = self.net(X)
             img_gen = img_gen.detach().cpu().numpy() 
-            img_gen = preprocess.reshape_patch_back(img_gen, self.cfg.model.patch_size)
             output_length = self.cfg.dataset.num_frames - self.cfg.model.input_num
             pred = img_gen[:, -output_length:]
-            X = X.detach().cpu().numpy()
-            X = preprocess.reshape_patch_back(X, self.cfg.model.patch_size)
             super().save_gif(X, pred, epoch, phase)
             
-
-    def reserve_schedule_sampling_exp(self, itr):
-        if itr < self.cfg.sampling.r_sampling_step_1:
-            r_eta = 0.5
-        elif itr < self.cfg.sampling.r_sampling_step_2:
-            r_eta = 1.0 - 0.5 * math.exp(-float(itr - self.cfg.sampling.r_sampling_step_1) / args.r_exp_alpha)
-        else:
-            r_eta = 1.0
-
-        if itr < self.cfg.sampling.r_sampling_step_1:
-            eta = 0.5
-        elif itr < self.cfg.sampling.r_sampling_step_2:
-            eta = 0.5 - (0.5 / (self.cfg.sampling.r_sampling_step_2 - self.cfg.sampling.r_sampling_step_1)) * (itr - self.cfg.sampling.r_sampling_step_1)
-        else:
-            eta = 0.0
-
-        r_random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, self.cfg.dataset.num_frames - 1))
-        r_true_token = (r_random_flip < r_eta)
-
-        random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, len(self.dataset) - self.cfg.dataset.num_frames - 1))
-        true_token = (random_flip < eta)
-
-        ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-        zeros = np.zeros((self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-
-        real_input_flag = []
-        for i in range(self.cfg.train.batch_size):
-            for j in range(len(self.dataset) - 2):
-                if j < self.cfg.dataset.num_frames - 1:
-                    if r_true_token[i, j]:
-                        real_input_flag.append(ones)
-                    else:
-                        real_input_flag.append(zeros)
-                else:
-                    if true_token[i, j - (self.cfg.dataset.num_frames - 1)]:
-                        real_input_flag.append(ones)
-                    else:
-                        real_input_flag.append(zeros)
-
-        real_input_flag = np.array(real_input_flag)
-        real_input_flag = np.reshape(real_input_flag,
-                                    (self.cfg.train.batch_size,
-                                    len(self.dataset) - 2,
-                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                                    self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-        return real_input_flag
-
-
-    def schedule_sampling(self, eta, itr):
-        zeros = np.zeros((self.cfg.train.batch_size,
-                        len(self.dataset) - self.cfg.dataset.num_frames - 1,
-                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-        if not self.cfg.sampling.scheduled_sampling:
-            return 0.0, zeros
-
-        if itr < self.cfg.sampling.sampling_stop_iter:
-            eta -= self.cfg.sampling.sampling_changing_rate
-        else:
-            eta = 0.0
-        random_flip = np.random.random_sample(
-            (self.cfg.train.batch_size, len(self.dataset) - self.cfg.dataset.num_frames - 1))
-        true_token = (random_flip < eta)
-        ones = np.ones((self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-        zeros = np.zeros((self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                        self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-        real_input_flag = []
-        for i in range(self.cfg.train.batch_size):
-            for j in range(len(self.dataset) - self.cfg.dataset.num_frames - 1):
-                if true_token[i, j]:
-                    real_input_flag.append(ones)
-                else:
-                    real_input_flag.append(zeros)
-        real_input_flag = np.array(real_input_flag)
-        real_input_flag = np.reshape(real_input_flag,
-                                    (self.cfg.train.batch_size,
-                                    len(self.dataset) - self.cfg.dataset.num_frames - 1,
-                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                                    self.cfg.dataset.img_width // self.cfg.model.patch_size,
-                                    self.cfg.model.patch_size ** 2 * self.cfg.dataset.img_channel))
-        return eta, real_input_flag

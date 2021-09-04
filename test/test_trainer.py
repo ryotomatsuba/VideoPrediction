@@ -64,4 +64,4 @@ class TestSampling(unittest.TestCase):
     def test_sampling(self) -> None:
         input_shape=(2,4,32,32,16) # batch,input_num,patch_w,patch_h,patch_ch
         eta, mask_true=schedule_sampling(eta=1.0,itr=0,batch=2,input_num=4,total_length = 10)
-        self.assertEqual(list(mask_true.shape),[2,5])
+        self.assertEqual(list(mask_true.shape),[2,5,1,1,1])

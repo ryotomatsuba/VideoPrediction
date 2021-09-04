@@ -35,16 +35,15 @@ class PredRNN(nn.Module):
         self.conv_last = nn.Conv2d(self.num_hidden[self.num_layers - 1], self.frame_channel,
                                    kernel_size=1, stride=1, padding=0, bias=False)
 
-    def forward(self, frames_tensor, mask_true=None):
+    def forward(self, frames_tensor ):
         device=frames_tensor.device
         frames_tensor=preprocess.reshape_patch(frames_tensor, self.patch_size)
-
-        if mask_true is None:
-            batch, total_length, height, width, ch = frames_tensor.size()
-            mask_true = torch.ones((batch,total_length-self.input_num,height,width,ch), device=device)
+        self.mask_true
+        batch, total_length, height, width, ch = frames_tensor.size()
+        if self.mask_true is None:
+            self.mask_true = torch.ones((batch,total_length-self.input_num,height,width,ch), device=device)
         # [batch, length, height, width, channel] -> [batch, length, channel, height, width]
         frames = frames_tensor.permute(0, 1, 4, 2, 3).contiguous()
-        mask_true = mask_true.permute(0, 1, 4, 2, 3).contiguous()
         next_frames = []
 
         h_t = []
@@ -56,20 +55,20 @@ class PredRNN(nn.Module):
             c_t.append(zeros)
 
         memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(device)
-
+        self.mask_true=self.mask_true.to(device)
         for t in range(self.total_length - 1):
             # reverse schedule sampling
             if self.reverse_scheduled_sampling == 1:
                 if t == 0:
                     net = frames[:, t]
                 else:
-                    net = mask_true[:, t - 1] * frames[:, t] + (1 - mask_true[:, t - 1]) * x_gen
+                    net = self.mask_true[:, t - 1] * frames[:, t] + (1 - self.mask_true[:, t - 1]) * x_gen
             else:
                 if t < self.input_num:
                     net = frames[:, t]
                 else:
-                    net = mask_true[:, t - self.input_num] * frames[:, t] + \
-                          (1 - mask_true[:, t - self.input_num]) * x_gen
+                    net = self.mask_true[:, t - self.input_num] * frames[:, t] + \
+                          (1 - self.mask_true[:, t - self.input_num]) * x_gen
 
             h_t[0], c_t[0], memory = self.cell_list[0](net, h_t[0], c_t[0], memory)
 
@@ -85,6 +84,9 @@ class PredRNN(nn.Module):
         next_frames = preprocess.reshape_patch_back(next_frames, self.patch_size)
 
         return next_frames
+    
+    def set_mask(self,mask_true):
+        self.mask_true=mask_true
 
 if __name__=="__main__":
     batch, total_length, h ,w= 1, 6, 128, 128

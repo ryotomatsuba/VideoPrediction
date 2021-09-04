@@ -1,5 +1,5 @@
 import numpy as np
-
+import torch
 
 
 # hyparameters
@@ -14,6 +14,16 @@ sampling_changing_rate = 0.00002
 
 
 def schedule_sampling(eta, itr, batch, input_num,total_length = 10):
+    """teacher forcing rate schedule
+    Args:
+        eta: teacher forcing rate
+        itr: current iteration
+        batch: batch size
+        input_num: number of input
+        total_length: total number of image sequence
+    Returns:
+        mask : 1 if teacher forcing is used
+    """
 
     total_length = 10
     mask_shape=(batch, total_length-input_num-1)
@@ -27,4 +37,7 @@ def schedule_sampling(eta, itr, batch, input_num,total_length = 10):
         eta = 0.0
     random_flip = np.random.random_sample(mask_shape)
     true_token = (random_flip < eta)
+    true_token = torch.FloatTensor(true_token).view(batch,-1,1,1,1)
     return eta, true_token
+
+
