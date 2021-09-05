@@ -26,20 +26,23 @@ class TestTrainer(unittest.TestCase):
         return super().setUp()
     
     def test_unet_trainer(self)-> None:
-        self.override_model("unet")
+        args=["model=unet"]
+        self.override_config(args)
         trainer=get_trainer(self.cfg)
         trainer.train()
         self.check_file_exists()
 
 
     def test_predrnn_trainer(self)-> None:
-        self.override_model("predrnn")
+        args=["model=predrnn",]
+        self.override_config(args)
         trainer=get_trainer(self.cfg)
         trainer.train()
         self.check_file_exists()
 
     def test_stmoe_trainer(self)-> None:
-        self.override_model("stmoe")
+        args=["model=stmoe",]
+        self.override_config(args)
         trainer=get_trainer(self.cfg)
         trainer.train()
         self.check_file_exists()
@@ -48,9 +51,9 @@ class TestTrainer(unittest.TestCase):
         self.assertTrue(os.path.exists("best_ckpt.pth"))
         self.assertTrue(os.path.exists("pred_train_0(0).gif"))
     
-    def override_model(self, model_name: str) -> None:
+    def override_config(self, args: list) -> None:
         with initialize(config_path="../configs"):
-            self.overrides.append(f"model={model_name}")
+            self.overrides.extend(args)
             self.cfg = compose(config_name="default", overrides=self.overrides)
 
     def tearDown(self) -> None:
