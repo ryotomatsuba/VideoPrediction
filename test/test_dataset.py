@@ -2,6 +2,7 @@ from data.dataset import get_dataset
 import unittest
 from hydra.experimental import initialize, compose
 from utils.draw import save_gif
+import torch
 
 class TestDataset(unittest.TestCase):
     def __init__(self, methodName: str) -> None:
@@ -21,6 +22,13 @@ class TestDataset(unittest.TestCase):
         with initialize(config_path="../configs"):
             self.overrides.extend(args)
             self.cfg = compose(config_name="default", overrides=self.overrides)
+    
+    def check_intensity_range(self, dataset: torch.Tensor, min_val=-1e-6, max_val=1) -> None:
+        """check if dataset is almost in range [min_val, max_val]"""
+        q=torch.tensor([0.25,0.75])
+        q1, q3 =torch.quantile(dataset[:],q)
+        self.assertLess(min_val,q1)
+        self.assertLess(q3, max_val)
 
 
     def test_moving_mnist(self):
@@ -31,6 +39,7 @@ class TestDataset(unittest.TestCase):
         self.override_config(args)
         dataset=get_dataset(self.cfg)
         self.assertEqual(dataset[:].shape,(2,10,128,128))
+        self.check_intensity_range(dataset[:])
         save_gif(dataset[0],dataset[1])
 
     def test_human_action(self):
@@ -40,7 +49,8 @@ class TestDataset(unittest.TestCase):
             ]
         self.override_config(args)
         dataset=get_dataset(self.cfg)
-        self.assertEqual(dataset[:].shape,(100,10,128,128))
+        self.assertEqual(dataset[:].shape,(100,10,128,128)) # check shape
+        self.check_intensity_range(dataset[:])
         save_gif(dataset[0],dataset[1],greyscale=True)
 
 
