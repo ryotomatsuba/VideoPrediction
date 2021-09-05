@@ -1,7 +1,7 @@
 defaults:
- - dataset: moving_mnist
- - train: development
- - model: stmoe
+ - dataset: human_action
+ - train: training
+ - model: predrnn
  - sampling: default
 
 mlrun_path: /data/Result/mlruns/
