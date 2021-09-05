@@ -11,7 +11,6 @@ from omegaconf import DictConfig
 from torch.utils.data import Dataset, dataset
 import matplotlib.pyplot as plt
 from pathlib import Path
-
 import cv2
 from PIL import Image
 import random
@@ -120,6 +119,8 @@ class ActionDataset(Dataset):
             new_video=[]
             for frame in video:
                 frame=cv2.resize(frame,size)
+                # intensity normalization
+                frame=frame/255.0
                 new_video.append(frame)
             new_videos.append(new_video)
         return new_videos
@@ -144,16 +145,4 @@ class ActionDataset(Dataset):
 
 
 if __name__=="__main__":
-    # test ActionDataset class
-    cfg=DictConfig({
-        "dataset":{
-            "frames_shift":300,
-            "num_frames":20,
-            "img_width": 128,
-            "actions":["walking"],
-        }
-    })
-    dataset=ActionDataset(cfg)
-    print(dataset[0].shape)
-    print(len(dataset))
-    save_gif(dataset[30],dataset[40],"test.gif",greyscale=True)
+    pass
