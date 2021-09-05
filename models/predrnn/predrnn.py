@@ -20,6 +20,7 @@ class PredRNN(nn.Module):
         self.reverse_scheduled_sampling=0
         self.num_layers = len(self.num_hidden)
         cell_list = []
+        self.mask_true=None
 
 
         width = img_width // patch_size
@@ -38,10 +39,9 @@ class PredRNN(nn.Module):
     def forward(self, frames_tensor ):
         device=frames_tensor.device
         frames_tensor=preprocess.reshape_patch(frames_tensor, self.patch_size)
-        self.mask_true
         batch, total_length, height, width, ch = frames_tensor.size()
         if self.mask_true is None:
-            self.mask_true = torch.ones((batch,total_length-self.input_num,height,width,ch), device=device)
+            self.mask_true = torch.zeros((batch,total_length-self.input_num-1,1,1,1), device=device)
         # [batch, length, height, width, channel] -> [batch, length, channel, height, width]
         frames = frames_tensor.permute(0, 1, 4, 2, 3).contiguous()
         next_frames = []
@@ -92,5 +92,3 @@ if __name__=="__main__":
     batch, total_length, h ,w= 1, 6, 128, 128
     net=PredRNN(total_length=total_length,img_width=w)
     summary(net,(total_length, h ,w, 1), device="cpu")
-    input = torch.rand(batch, total_length, h ,w)
-    output = net(input)

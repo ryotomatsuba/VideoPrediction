@@ -44,7 +44,5 @@ if __name__=="__main__":
     batch, input_frame, h ,w= 1, 4, 128, 128
     net=UNet(n_channels=input_frame, n_classes=1)
     summary(net,(4,128,128),device="cpu")
-    input = torch.rand(batch, input_frame, h ,w)
-    output = net(input)
     
 
