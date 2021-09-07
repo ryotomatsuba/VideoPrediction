@@ -1,44 +1,14 @@
-import torch
-import numpy as np
-import seaborn as sns
-sns.set()
-import cv2
-from math import *
+from .human_action import Video
 from torch.utils.data import Dataset
+import torch
 from pathlib import Path
 import cv2
 import numpy as np
-import torch
 
-class Video(Dataset):
+
+class TrafficDataset(Dataset):
     """
-    convert avi video to np image sequence
-    """
-    def __init__(self, video_path, grey_scale=True):
-        self.grey_scale = grey_scale
-        self.video_path = video_path
-        self.cap = cv2.VideoCapture(video_path)
-
-    def __getitem__(self, index):
-        # read the video frame
-        ret, img = self.cap.read()
-        if not ret:
-            raise Exception(f'{index} is not a valid index for {self.video_path}')
-        if index==self.__len__()-1:
-            # release the video
-            self.cap.release()
-        # convert to grey scale
-        if self.grey_scale:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        return img
-
-    def __len__(self):
-        return int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-class ActionDataset(Dataset):
-    """
-    Human Action Dataset
+    Traffic Dataset
     """
     
     def __init__(self,cfg):
@@ -53,7 +23,7 @@ class ActionDataset(Dataset):
         X=torch.from_numpy(X).type(torch.FloatTensor)
         return X
     
-    def get_action_videos(self,action_name):
+    def get_traffic_videos(self,action_name):
         """
         get video sequence of a specific action
 
