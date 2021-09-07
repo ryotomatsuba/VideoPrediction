@@ -23,7 +23,7 @@ class Video(Dataset):
         # read the video frame
         ret, img = self.cap.read()
         if not ret:
-            raise Exception(f'{index} is not a valid index for {self.video_path}')
+            raise IndexError(f'{index} is not a valid index for {self.video_path}')
         if index==self.__len__()-1:
             # release the video
             self.cap.release()

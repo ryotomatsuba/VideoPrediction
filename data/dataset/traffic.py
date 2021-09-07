@@ -13,7 +13,7 @@ class TrafficDataset(Dataset):
     
     def __init__(self,cfg):
         self.cfg=cfg
-        self.get_action_dataset()
+        self.get_dataset()
 
     def __len__(self):
         return len(self.data)
@@ -23,29 +23,32 @@ class TrafficDataset(Dataset):
         X=torch.from_numpy(X).type(torch.FloatTensor)
         return X
     
-    def get_traffic_videos(self,action_name):
+    def get_traffic_video(self,dir_path="/data/Datasets/traffic/video"):
         """
-        get video sequence of a specific action
+        get video sequence of a traffic dataset
 
         Args:
-            action_name: string, name of the action
+            dir_path: str, path to the video directory
         Returns:
             video: numpy array, video sequence. ex: (id, num_frames, h, w)
         """
         videos=[]
-        video_path=f"/data/Datasets/KTH/avi_data/{action_name}"
-        video_path=Path(video_path)
-        video_paths=video_path.glob("*.avi")
+        dir_path=Path(dir_path)
+        video_paths=dir_path.glob("*.avi")
         for video_path in video_paths:
             video=Video(str(video_path))
             video_sequence=[]
             for i in range(len(video)):
                 print(f"read {video_path}", end="\r")
-                video_sequence.append(video[i])
+                try:
+                    video_sequence.append(video[i])
+                except:
+                    # if the video is broken, skip it
+                    break
             videos.append(video_sequence)
         return videos
     
-    def augment_videos(self,videos,num_frames=10, num_crop=30):
+    def augment_videos(self,videos,num_frames=10, num_crop=0):
         """
         augment a video sequence by shifting frames.
         if num_crop>0, then crop front and back frames.
@@ -85,18 +88,16 @@ class TrafficDataset(Dataset):
             new_videos.append(new_video)
         return new_videos
 
-    def get_action_dataset(self):
+    def get_dataset(self):
         """
-        get action dataset
+        get dataset
         """
         size = (self.cfg.dataset.img_width, self.cfg.dataset.img_width)
-        all_videos=[]
-        for action_name in self.cfg.dataset.actions:
-            videos=self.get_action_videos(action_name)
-            videos=self.augment_videos(videos, num_frames=self.cfg.dataset.num_frames)
-            videos=self.resize_videos(videos,size=size)
-            all_videos.extend(videos)
-        self.data=np.array(all_videos)
+    
+        videos=self.get_traffic_video()
+        videos=self.augment_videos(videos, num_frames=self.cfg.dataset.num_frames)
+        videos=self.resize_videos(videos,size=size)
+        self.data=np.array(videos)
         print(f"dataset size is {self.data.shape}")
 
 

@@ -26,6 +26,9 @@ class TestDataset(unittest.TestCase):
     def check_intensity_range(self, dataset: torch.Tensor, min_val=-1e-6, max_val=1) -> None:
         """check if dataset is almost in range [min_val, max_val]"""
         q=torch.tensor([0.25,0.75])
+        # if tensor is too large, then clip it
+        if len(dataset)>10:
+            dataset=dataset[:10]
         q1, q3 =torch.quantile(dataset[:],q)
         self.assertLess(min_val,q1)
         self.assertLess(q3, max_val)
@@ -50,6 +53,17 @@ class TestDataset(unittest.TestCase):
         self.override_config(args)
         dataset=get_dataset(self.cfg)
         self.assertEqual(dataset[:].shape,(100,10,128,128)) # check shape
+        self.check_intensity_range(dataset[:])
+        save_gif(dataset[0],dataset[1],greyscale=True)
+
+    def test_traffic_dataset(self):
+        args=[
+            "dataset=traffic",
+            "dataset.frames_shift=10",
+            ]
+        self.override_config(args)
+        dataset=get_dataset(self.cfg)
+        self.assertEqual(dataset[:].shape,(1261,10,128,128))
         self.check_intensity_range(dataset[:])
         save_gif(dataset[0],dataset[1],greyscale=True)
 

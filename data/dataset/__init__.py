@@ -1,6 +1,7 @@
 from .moving_mnist import MnistDataset
 from .typhoon import TyphoonDataset
 from .human_action import ActionDataset
+from .traffic import TrafficDataset
 
 
 def get_dataset(cfg):
@@ -11,5 +12,7 @@ def get_dataset(cfg):
         return TyphoonDataset(cfg)
     elif name == 'human_action':
         return ActionDataset(cfg)
+    elif name == 'traffic':
+        return TrafficDataset(cfg)
     else:
         raise ValueError(f'Unknown dataset: {name}')
