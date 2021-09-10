@@ -1,11 +1,12 @@
 import unittest
 import torch
+from torch.autograd import grad
 from models.unet import UNet
 from models.predrnn import PredRNN
 from models.stmoe import STMoE
 from utils.draw import save_weight_gif
 import numpy as np
-
+from models.predrnn.utils import preprocess
 
 
 batch, total_length, input_frame, h ,w, c= 2, 10, 4, 128, 128, 1
@@ -23,9 +24,35 @@ class PredRNNTest(unittest.TestCase):
         mask_tensor = torch.zeros((batch, total_length-input_frame - 1, 1, 1, 1))
         net.set_mask(mask_tensor)
         output = net(input)
-        self.assertEqual(list(output.shape),[batch, total_length-input_frame, h ,w, c])
+        self.assertEqual(list(output.shape),[batch, total_length-input_frame, h ,w])
     
+    def test_reshape_patch(self):
+        input = torch.rand(batch, total_length, h ,w)
+        reshaped_tensor = preprocess.reshape_patch(input, 4)
+        reshaped_tensor = preprocess.reshape_patch_back(reshaped_tensor,4) 
+        self.assertTrue(torch.equal(input, reshaped_tensor))
 
+    def test_reshaped_patch_grad(self):
+        patch_size=4
+        input = torch.rand(batch, total_length, h ,w)
+        true = torch.rand(batch, total_length, h ,w)
+        criterion=torch.nn.MSELoss()
+        weight = torch.rand(batch, total_length,h//patch_size,w//patch_size,patch_size*patch_size*c,requires_grad=True)
+        optim=torch.optim.Adam([weight], lr=0.01)
+        reshaped_input = preprocess.reshape_patch(input, patch_size)
+        pred_patch=reshaped_input*weight
+        # calc loss after reshape
+        true_patch=preprocess.reshape_patch(true, patch_size)
+        loss=criterion(pred_patch,true_patch)
+        loss.backward(retain_graph=True)
+        weight_grad_after_reshape=weight.grad.clone()
+        optim.zero_grad()
+        # calc loss before reshape
+        pred=preprocess.reshape_patch_back(pred_patch, patch_size)
+        loss=criterion(pred,true)
+        loss.backward()
+        weight_grad_before_reshape=weight.grad.clone()
+        self.assertTrue(torch.equal(weight_grad_before_reshape, weight_grad_after_reshape))
 
 class STMoETest(unittest.TestCase):
     def __init__(self, methodName: str) -> None:

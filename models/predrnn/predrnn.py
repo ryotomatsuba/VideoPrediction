@@ -24,7 +24,6 @@ class PredRNN(nn.Module):
 
 
         width = img_width // patch_size
-        self.MSE_criterion = nn.MSELoss()
 
         for i in range(self.num_layers):
             in_channel = self.frame_channel if i == 0 else self.num_hidden[i - 1]

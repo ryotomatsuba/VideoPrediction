@@ -67,10 +67,10 @@ class PredRNNTrainer(BaseTrainer):
                 self.net.set_mask(mask_tensor)
                 optimizer.zero_grad()
                 next_frames = self.net(X)
-                loss = self.criterion(next_frames, X[:, self.cfg.model.input_num:,np.newaxis])
+                loss = self.criterion(next_frames, X[:, self.cfg.model.input_num:])
                 loss.backward()
                 optimizer.step()
-                epoch_loss += loss.item()/len(X[0, self.cfg.model.input_num:]) # loss per frame
+                epoch_loss += loss.item() # loss per batch
                 iteration += 1
             loss_ave = epoch_loss / len(self.train_loader) # average per batch
             self.loss["train"].append(loss_ave) 
@@ -104,8 +104,8 @@ class PredRNNTrainer(BaseTrainer):
             X = torch.FloatTensor(X).to(self.device)
             with torch.no_grad():
                 next_frames = self.net(X)
-                loss = self.criterion(next_frames, X[:, self.cfg.model.input_num:,np.newaxis])
-            epoch_loss += loss.item()/len(X[0, self.cfg.model.input_num:]) # loss per frame
+                loss = self.criterion(next_frames, X[:, self.cfg.model.input_num:])
+            epoch_loss += loss.item() # loss per batch
         loss_ave=epoch_loss/len(self.val_loader)
         self.loss["val"].append(loss_ave)
         logging.info(f'Validation MSE: {loss_ave}')
