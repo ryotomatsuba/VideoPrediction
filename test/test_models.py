@@ -24,18 +24,18 @@ class PredRNNTest(unittest.TestCase):
         mask_tensor = torch.zeros((batch, total_length-input_frame - 1, 1, 1, 1))
         net.set_mask(mask_tensor)
         output = net(input)
-        self.assertEqual(list(output.shape),[batch, total_length-input_frame, h ,w, c])
+        self.assertEqual(list(output.shape),[batch, total_length-input_frame, h ,w])
     
     def test_reshape_patch(self):
-        input = torch.rand(batch, total_length, h ,w, c)
+        input = torch.rand(batch, total_length, h ,w)
         reshaped_tensor = preprocess.reshape_patch(input, 4)
         reshaped_tensor = preprocess.reshape_patch_back(reshaped_tensor,4) 
         self.assertTrue(torch.equal(input, reshaped_tensor))
 
     def test_reshaped_patch_grad(self):
         patch_size=4
-        input = torch.rand(batch, total_length, h ,w, c)
-        true = torch.rand(batch, total_length, h ,w, c)
+        input = torch.rand(batch, total_length, h ,w)
+        true = torch.rand(batch, total_length, h ,w)
         criterion=torch.nn.MSELoss()
         weight = torch.rand(batch, total_length,h//patch_size,w//patch_size,patch_size*patch_size*c,requires_grad=True)
         optim=torch.optim.Adam([weight], lr=0.01)

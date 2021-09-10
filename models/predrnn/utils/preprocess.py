@@ -31,5 +31,7 @@ def reshape_patch_back(patch_tensor, patch_size):
                                 patch_height * patch_size,
                                 patch_width * patch_size,
                                 img_channels])
+    if img_channels==1:
+        img_tensor=img_tensor[...,0]
     return img_tensor
 

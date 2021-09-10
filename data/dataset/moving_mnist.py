@@ -21,7 +21,6 @@ class MnistDataset(Dataset):
         num_data=cfg.dataset.num_data
         self.data = mv_mnist(num_data,cfg.dataset.num_frames,cfg.dataset.motions)
         self.data *= cfg.dataset.max_intensity/255
-        self.data = self.data[:,:,:,:,np.newaxis]# add channnel
 
     def __len__(self):
         return len(self.data)
