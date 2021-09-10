@@ -35,14 +35,24 @@ class PredRNNTest(unittest.TestCase):
     def test_reshaped_patch_grad(self):
         patch_size=4
         input = torch.rand(batch, total_length, h ,w, c)
-        reshaped_tensor = preprocess.reshape_patch(input, patch_size)
-
+        true = torch.rand(batch, total_length, h ,w, c)
+        criterion=torch.nn.MSELoss()
         weight = torch.rand(batch, total_length,h//patch_size,w//patch_size,patch_size*patch_size*c,requires_grad=True)
-        pred_patch=reshaped_tensor*weight
-        pred=preprocess.reshape_patch_back(pred_patch,patch_size)
-        pred.backward(torch.ones_like(pred))
-        grad_weight = weight.grad
-        self.assertTrue(torch.equal(grad_weight, reshaped_tensor))
+        optim=torch.optim.Adam([weight], lr=0.01)
+        reshaped_input = preprocess.reshape_patch(input, patch_size)
+        pred_patch=reshaped_input*weight
+        # calc loss after reshape
+        true_patch=preprocess.reshape_patch(true, patch_size)
+        loss=criterion(pred_patch,true_patch)
+        loss.backward(retain_graph=True)
+        weight_grad_after_reshape=weight.grad.clone()
+        optim.zero_grad()
+        # calc loss before reshape
+        pred=preprocess.reshape_patch_back(pred_patch, patch_size)
+        loss=criterion(pred,true)
+        loss.backward()
+        weight_grad_before_reshape=weight.grad.clone()
+        self.assertTrue(torch.equal(weight_grad_before_reshape, weight_grad_after_reshape))
 
 class STMoETest(unittest.TestCase):
     def __init__(self, methodName: str) -> None:
