@@ -1,11 +1,12 @@
 import unittest
 import torch
+from torch.autograd import grad
 from models.unet import UNet
 from models.predrnn import PredRNN
 from models.stmoe import STMoE
 from utils.draw import save_weight_gif
 import numpy as np
-
+from models.predrnn.utils import preprocess
 
 
 batch, total_length, input_frame, h ,w, c= 2, 10, 4, 128, 128, 1
@@ -25,7 +26,23 @@ class PredRNNTest(unittest.TestCase):
         output = net(input)
         self.assertEqual(list(output.shape),[batch, total_length-input_frame, h ,w, c])
     
+    def test_reshape_patch(self):
+        input = torch.rand(batch, total_length, h ,w, c)
+        reshaped_tensor = preprocess.reshape_patch(input, 4)
+        reshaped_tensor = preprocess.reshape_patch_back(reshaped_tensor,4) 
+        self.assertTrue(torch.equal(input, reshaped_tensor))
 
+    def test_reshaped_patch_grad(self):
+        patch_size=4
+        input = torch.rand(batch, total_length, h ,w, c)
+        reshaped_tensor = preprocess.reshape_patch(input, patch_size)
+
+        weight = torch.rand(batch, total_length,h//patch_size,w//patch_size,patch_size*patch_size*c,requires_grad=True)
+        pred_patch=reshaped_tensor*weight
+        pred=preprocess.reshape_patch_back(pred_patch,patch_size)
+        pred.backward(torch.ones_like(pred))
+        grad_weight = weight.grad
+        self.assertTrue(torch.equal(grad_weight, reshaped_tensor))
 
 class STMoETest(unittest.TestCase):
     def __init__(self, methodName: str) -> None:
