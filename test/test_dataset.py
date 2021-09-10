@@ -41,7 +41,7 @@ class TestDataset(unittest.TestCase):
             ]
         self.override_config(args)
         dataset=get_dataset(self.cfg)
-        self.assertEqual(dataset[:].shape,(2,10,128,128))
+        self.assertEqual(dataset[:].shape,(2,10,128,128,1))
         self.check_intensity_range(dataset[:])
         save_gif(dataset[0],dataset[1])
 
