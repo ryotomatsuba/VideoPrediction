@@ -34,7 +34,7 @@ def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 5
         cax = divider.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im2,cax=cax)
     ani = animation.FuncAnimation(fig, update, fargs = (ax1, ax2), interval = interval, frames = len(gt_images))
-    ani.save(save_path, writer = 'imagemagick')
+    ani.save(save_path, writer='pillow')
     plt.close()
 
 
@@ -95,7 +95,7 @@ def save_weight_gif(pd_images,weights,save_path="weights.gif",suptitle="weights"
     fig, (ax1, ax2) = plt.subplots(1,2)  
     fig.suptitle(suptitle)
     ani = animation.FuncAnimation(fig, update, fargs = (ax1, ax2), interval = interval, frames = num_frame)
-    ani.save(save_path, writer = 'imagemagick')
+    ani.save(save_path, writer = 'pillow')
     plt.close()
 
 
