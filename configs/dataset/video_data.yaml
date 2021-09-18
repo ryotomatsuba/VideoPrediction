@@ -1,0 +1,10 @@
+# @package _group_
+
+name: video_data
+dir_path: /data/Datasets/MP4
+frames_shift: 10 # of frames to shift
+num_frames: 10
+img_width: 128
+img_channel: 1
+max_intensity: 1
+grey_scale: True # if true save grey scale gif 
