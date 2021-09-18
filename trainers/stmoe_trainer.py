@@ -126,11 +126,10 @@ class STMoETrainer(BaseTrainer):
         num_expert = self.cfg.model.num_expert
         batch_size=self.cfg.train.batch_size
         width = self.cfg.dataset.img_width
-        preds=torch.empty(batch_size, 0, width, width).to(device=self.device)
-        weights=torch.empty(batch_size, 0, num_expert, width, width).to(device=self.device)
- 
         
-        for X in tqdm(self.test_loader, ncols=100):
+        for i,X in enumerate(tqdm(self.test_loader, ncols=100)):
+            preds=torch.empty(batch_size, 0, width, width).to(device=self.device)
+            weights=torch.empty(batch_size, 0, num_expert, width, width).to(device=self.device)
             X = X.to(device=self.device, dtype=torch.float32)
             input_num=self.cfg.model.input_num
             total_num=X.shape[1]
@@ -141,8 +140,8 @@ class STMoETrainer(BaseTrainer):
                 epoch_loss += loss.item()
                 preds=torch.cat((preds,pred),dim=1) 
                 weights=torch.cat((weights,weight[:,np.newaxis]),dim=1) 
-            super().save_weight_gif(preds,weights, 0, "test")
-            super().save_gif(X, preds, 0, "test")
+            super().save_weight_gif(preds,weights, i, "test")
+            super().save_gif(X, preds, i, "test")
 
 
         loss_ave=epoch_loss/len(self.test_loader)
@@ -155,7 +154,6 @@ class STMoETrainer(BaseTrainer):
         """
         device = self.device
         self.net.eval()
-        draw_grey = self.cfg.dataset.grey_scale
         for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()

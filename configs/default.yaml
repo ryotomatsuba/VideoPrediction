@@ -1,15 +1,9 @@
 defaults:
- - dataset: human_action
+ - dataset: video_data
  - train: test
- - model: predrnn
+ - model: stmoe
  - sampling: default
 
 mlrun_path: /data/Result/mlruns/
 experiment:
   name: ${model.name} ${train.name}
-
-test:
-  load_model: "/home/data/ryoto/Unet/mlruns/2/e8ab44a681604eb9aaac31c6a4b26bfd/artifacts/best_ckpt.pth" # Load model from a .pth file
-  batch_size: 8
-  num_workers: 2
-  decouple_beta: 0.1

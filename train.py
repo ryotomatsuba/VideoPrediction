@@ -16,7 +16,7 @@ def main(cfg: DictConfig) -> None:
     # cudnn.benchmark = True
     trainer=get_trainer(cfg)
     try:
-        if cfg.train=="test":
+        if cfg.train.name=="test":
             trainer.test()
         else:
             trainer.train()
