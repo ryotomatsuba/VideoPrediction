@@ -1,6 +1,6 @@
 defaults:
  - dataset: human_action
- - train: training
+ - train: test
  - model: predrnn
  - sampling: default
 

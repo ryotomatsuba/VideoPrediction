@@ -16,7 +16,10 @@ def main(cfg: DictConfig) -> None:
     # cudnn.benchmark = True
     trainer=get_trainer(cfg)
     try:
-        trainer.train()
+        if cfg.train=="test":
+            trainer.test()
+        else:
+            trainer.train()
     except KeyboardInterrupt:
         torch.save(trainer.net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')

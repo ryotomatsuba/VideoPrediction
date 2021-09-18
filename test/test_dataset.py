@@ -74,11 +74,11 @@ class TestDataset(unittest.TestCase):
         args=[
             "dataset=video_data",
             "dataset.dir_path=/data/Datasets/MP4",
-            "dataset.frames_shift=10",
+            "dataset.frames_shift=100",
             ]
         self.override_config(args)
         dataset=get_dataset(self.cfg)
-        self.assertEqual(dataset[:].shape,(180,10,128,128))
+        self.assertEqual(dataset[:].shape,(18,10,128,128))
         self.check_intensity_range(dataset[:])
         save_gif(dataset[0],dataset[1],greyscale=True)
 

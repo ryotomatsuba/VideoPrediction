@@ -2,7 +2,7 @@
 
 name: video_data
 dir_path: /data/Datasets/MP4
-frames_shift: 10 # of frames to shift
+frames_shift: 600 # of frames to shift
 num_frames: 10
 img_width: 128
 img_channel: 1
