@@ -1,4 +1,4 @@
-from .human_action import Video
+from .video import Video
 from torch.utils.data import Dataset
 import torch
 from pathlib import Path
