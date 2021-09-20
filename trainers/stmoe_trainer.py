@@ -133,11 +133,13 @@ class STMoETrainer(BaseTrainer):
             X = X.to(device=self.device, dtype=torch.float32)
             input_num=self.cfg.model.input_num
             total_num=X.shape[1]
+            input_X = X[:,0:input_num]
             for t in range(input_num,total_num):
                 with torch.no_grad():
-                    pred, weight= self.net(X[:,t-input_num:t])
+                    pred, weight= self.net(input_X)
                 loss = self.criterion(pred, X[:,[t]])
                 epoch_loss += loss.item()
+                input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
                 weights=torch.cat((weights,weight[:,np.newaxis]),dim=1) 
             super().save_weight_gif(preds,weights, i, "test")
