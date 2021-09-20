@@ -32,6 +32,7 @@ class STMoETrainer(BaseTrainer):
 
         """
         self.net = STMoE(input_num=cfg.model.input_num,n_expert=2,train_model=cfg.model.train_model) # define model
+        self.criterion = nn.MSELoss()
         super().__init__(cfg)
 
     def train(self) -> None:
@@ -53,7 +54,7 @@ class STMoETrainer(BaseTrainer):
         optimizer = optim.RMSprop(self.net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2)
 
-        self.criterion = nn.MSELoss()
+        
 
         for epoch in range(epochs):
 
@@ -117,13 +118,44 @@ class STMoETrainer(BaseTrainer):
         logging.info(f'Validation MSE: {loss_ave}')
         return loss_ave
 
+    def test(self) -> None:
+        super().test()
+
+        self.net.eval()
+        epoch_loss = 0
+        num_expert = self.cfg.model.num_expert
+        batch_size=self.cfg.train.batch_size
+        width = self.cfg.dataset.img_width
+        
+        for i,X in enumerate(tqdm(self.test_loader, ncols=100)):
+            preds=torch.empty(batch_size, 0, width, width).to(device=self.device)
+            weights=torch.empty(batch_size, 0, num_expert, width, width).to(device=self.device)
+            X = X.to(device=self.device, dtype=torch.float32)
+            input_num=self.cfg.model.input_num
+            total_num=X.shape[1]
+            input_X = X[:,0:input_num]
+            for t in range(input_num,total_num):
+                with torch.no_grad():
+                    pred, weight= self.net(input_X)
+                loss = self.criterion(pred, X[:,[t]])
+                epoch_loss += loss.item()
+                input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
+                preds=torch.cat((preds,pred),dim=1) 
+                weights=torch.cat((weights,weight[:,np.newaxis]),dim=1) 
+            super().save_weight_gif(preds,weights, i, "test")
+            super().save_gif(X, preds, i, "test")
+
+
+        loss_ave=epoch_loss/len(self.test_loader)
+        logging.info(f'Test MSE: {loss_ave}')
+
+
     def save_gif(self,epoch):
         """
         save generated image sequences as gif file
         """
         device = self.device
         self.net.eval()
-        draw_grey = self.cfg.dataset.grey_scale
         for phase in ["train", "val"]:
             data_loader = self.train_loader if phase == "train" else self.val_loader
             X = iter(data_loader).__next__()
@@ -145,39 +177,3 @@ class STMoETrainer(BaseTrainer):
             super().save_gif(X, preds, epoch, phase)
 
 
-
-class Test(unittest.TestCase):
-    def test(self):
-        cfg={
-            "experiment":{"name":"test"},
-            "dataset":{
-                "num_data":10,
-                "num_frames": 5,
-                "max_intensity": 1,
-                "motions":["transition", "rotation", "growth_decay"]
-            },
-            "train":{
-                "epochs": 1,
-                "batch_size": 2,
-                "save_best_ckpt": True,
-                "num_save_images": 1,
-                "num_workers": 2,
-                "ckpt_path": "best_ckpt.pth",
-                "lr": 0.0001,
-                "val_percent": 0.1,
-
-            },
-            "model":{
-                "name": "unet",
-                "input_num": 4,
-                "load": False
-            }
-        }
-        cfg=DictConfig(cfg)
-        trainer = STMoETrainer(cfg)
-        trainer.train()
-
-
-if __name__=="__main__":
-    unittest.main()
-    

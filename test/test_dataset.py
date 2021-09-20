@@ -47,7 +47,8 @@ class TestDataset(unittest.TestCase):
 
     def test_human_action(self):
         args=[
-            "dataset=human_action",
+            "dataset=video_data",
+            "dataset.dir_path=/data/Datasets/KTH/avi_data/walking",
             "dataset.frames_shift=3000",
             ]
         self.override_config(args)
@@ -58,12 +59,26 @@ class TestDataset(unittest.TestCase):
 
     def test_traffic_dataset(self):
         args=[
-            "dataset=traffic",
+            "dataset=video_data",
+            "dataset.dir_path=/data/Datasets/traffic/video",
             "dataset.frames_shift=10",
             ]
         self.override_config(args)
         dataset=get_dataset(self.cfg)
         self.assertEqual(dataset[:].shape,(1261,10,128,128))
+        self.check_intensity_range(dataset[:])
+        save_gif(dataset[0],dataset[1],greyscale=True)
+
+    
+    def test_video_data_mp4(self):
+        args=[
+            "dataset=video_data",
+            "dataset.dir_path=/data/Datasets/MP4",
+            "dataset.frames_shift=100",
+            ]
+        self.override_config(args)
+        dataset=get_dataset(self.cfg)
+        self.assertEqual(dataset[:].shape,(18,10,128,128))
         self.check_intensity_range(dataset[:])
         save_gif(dataset[0],dataset[1],greyscale=True)
 

@@ -97,11 +97,16 @@ class BaseTrainer(ABC):
     def set_dataloader(self):
         """set dataloader from dataset"""
         self.dataset = get_dataset(self.cfg) # define dataset
-        n_val = int(len(self.dataset) * self.cfg.train.val_percent)
-        n_train = len(self.dataset) - n_val
-        train, val = random_split(self.dataset, [n_train, n_val])
-        self.train_loader = DataLoader(train, batch_size=self.cfg.train.batch_size, shuffle=True, num_workers=self.cfg.train.num_workers, pin_memory=True, drop_last=True)
-        self.val_loader = DataLoader(val, batch_size=self.cfg.train.batch_size, shuffle=False, num_workers=self.cfg.train.num_workers, pin_memory=True, drop_last=True)
+        if self.cfg.train.name=="test":
+            self.test_loader = DataLoader(self.dataset, batch_size=self.cfg.train.batch_size, shuffle=False, num_workers=self.cfg.train.num_workers, pin_memory=True, drop_last=True)
+        else:
+            n_val = int(len(self.dataset) * self.cfg.train.val_percent)
+            n_train = len(self.dataset) - n_val
+            train, val = random_split(self.dataset, [n_train, n_val])
+            self.train_loader = DataLoader(train, batch_size=self.cfg.train.batch_size, shuffle=True, num_workers=self.cfg.train.num_workers, pin_memory=True, drop_last=True)
+            self.val_loader = DataLoader(val, batch_size=self.cfg.train.batch_size, shuffle=False, num_workers=self.cfg.train.num_workers, pin_memory=True, drop_last=True)
+            
+
 
 
 
@@ -144,6 +149,15 @@ class BaseTrainer(ABC):
         """
         
         log.info('Evaluation:')
+    
+    def test(self):
+        """Test"""
+        pass
+        # load model params
+        if self.cfg.train.ckpt_path:
+            self.net.load_state_dict(torch.load(self.cfg.train.ckpt_path, map_location=self.device))
+            logging.info(f'Model loaded from {self.cfg.train.ckpt_path}')
+        log.info('Test:')
 
 
     def log_params(self) -> None:
