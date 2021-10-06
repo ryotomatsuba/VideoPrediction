@@ -15,7 +15,7 @@ from utils.draw import save_gif
 log = logging.getLogger(__name__)
 
 
-class UnetTrainer(BaseTrainer):
+class ExpertTrainer(BaseTrainer):
     """Expert Trainer
     
     Attributes:
