@@ -1,7 +1,7 @@
 defaults:
- - dataset: video_data
- - train: test
- - model: stmoe
+ - dataset: moving_mnist
+ - train: training
+ - model: unet
  - sampling: default
 
 mlrun_path: /data/Result/mlruns/
