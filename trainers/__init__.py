@@ -26,7 +26,7 @@ def get_trainer(cfg: object) -> object:
     
 
     if cfg.model.name == "predrnn":
-        return PredRNNTrainer(cfg)
+        return UnetTrainer(cfg)
     elif cfg.model.name == "unet":
         return UnetTrainer(cfg)
     elif cfg.model.name == "stmoe":
