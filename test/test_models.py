@@ -19,12 +19,9 @@ class UnetTest(unittest.TestCase):
         self.assertEqual(list(output.shape),[batch, 1 ,h ,w])
 class PredRNNTest(unittest.TestCase):    
     def test_predrnn(self):
-        input = torch.rand(batch, total_length, h ,w)
         net=PredRNN(input_num=input_frame,total_length=total_length)
-        mask_tensor = torch.zeros((batch, total_length-input_frame - 1, 1, 1, 1))
-        net.set_mask(mask_tensor)
         output = net(input)
-        self.assertEqual(list(output.shape),[batch, total_length-input_frame, h ,w])
+        self.assertEqual(list(output.shape),[batch, 1, h ,w])
     
     def test_reshape_patch(self):
         input = torch.rand(batch, total_length, h ,w)
