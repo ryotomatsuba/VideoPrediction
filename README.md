@@ -10,17 +10,6 @@ sh docker/run.sh
 sh docker/exec.sh
 ```
 
-### Set Proxy (optional)
-
-If you are using wni server (pt-sh.wni.co.jp), you need to set up a proxy.
-
-```sh
-export http_proxy=http://172.16.250.1:8080
-export https_proxy=http://172.16.250.1:8080
-export no_proxy=localhost,127.0.0.1
-
-```
-
 ## Run training
 
 1. set `configs/default.yaml`
