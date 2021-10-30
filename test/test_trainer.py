@@ -11,7 +11,7 @@ class TestTrainer(unittest.TestCase):
         # config is relative to a module
         self.overrides=[
             "train=development",
-            "dataset=moving_mnist",
+            "dataset=moving_image",
             "dataset.num_data=4",
             "experiment.name=unittest"]
         super().__init__(methodName=methodName)
