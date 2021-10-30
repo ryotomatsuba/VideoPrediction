@@ -1,5 +1,5 @@
 defaults:
- - dataset: moving_mnist
+ - dataset: moving_image
  - train: training
  - model: unet
  - sampling: default

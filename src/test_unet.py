@@ -7,13 +7,13 @@ import hydra
 from omegaconf import DictConfig
 from models.unet import UNet
 from torch.utils.data import DataLoader,random_split
-from data.dataset import MnistDataset
+from data.dataset import MovingImageDataset
 from utils.draw import save_gif
 
 
 def test(cfg):
     net = UNet(n_channels=4, n_classes=1, bilinear=True)
-    dataset = MnistDataset(cfg)
+    dataset = MovingImageDataset(cfg)
     test_loader = DataLoader(dataset, batch_size=cfg.test.batch_size, shuffle=False, num_workers=cfg.test.num_workers, pin_memory=True, drop_last=True)
     # define model
     if torch.cuda.is_available():

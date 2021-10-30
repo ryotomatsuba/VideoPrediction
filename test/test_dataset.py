@@ -34,9 +34,9 @@ class TestDataset(unittest.TestCase):
         self.assertLess(q3, max_val)
 
 
-    def test_moving_mnist(self):
+    def test_moving_image(self):
         args=[
-            "dataset=moving_mnist",
+            "dataset=moving_image",
             "dataset.num_data=2",
             ]
         self.override_config(args)

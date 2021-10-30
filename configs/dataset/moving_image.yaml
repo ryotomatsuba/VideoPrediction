@@ -1,6 +1,6 @@
 # @package _group_
 
-name: moving_mnist
+name: moving_image
 num_data: 1000
 num_frames: 10
 img_width: 128
