@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Unet Trainer"""
+"""Expert Trainer"""
 from models.unet import UNet
+from models.predrnn import PredRNN
 import logging
 import torch.nn as nn
 import torch
@@ -14,8 +15,8 @@ from utils.draw import save_gif
 log = logging.getLogger(__name__)
 
 
-class UnetTrainer(BaseTrainer):
-    """Unet Trainer
+class ExpertTrainer(BaseTrainer):
+    """Expert Trainer
     
     Attributes:
         self.cfg: Config of project.
@@ -29,11 +30,22 @@ class UnetTrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.net = UNet(n_channels=cfg.model.input_num, n_classes=1, bilinear=True) # define model
-        logging.info(f'Network:\n'
-                    f'\t{self.net.n_channels} input channels\n'
-                    f'\t{self.net.n_classes} output channels (classes)\n'
-                    f'\t{"Bilinear" if self.net.bilinear else "Transposed conv"} upscaling')
+        if cfg.model.name=="unet":
+            self.net = UNet(n_channels=cfg.model.input_num, n_classes=1, bilinear=True) # define model
+            logging.info(f'Network:\n'
+                        f'\t{self.net.n_channels} input channels\n'
+                        f'\t{self.net.n_classes} output channels (classes)\n'
+                        f'\t{"Bilinear" if self.net.bilinear else "Transposed conv"} upscaling')
+        elif cfg.model.name =="predrnn":
+            self.net = PredRNN(
+                input_num=cfg.model.input_num,total_length=cfg.dataset.num_frames,
+                img_channel=cfg.dataset.img_channel,img_width=cfg.dataset.img_width,
+                patch_size=cfg.model.patch_size,num_hidden=cfg.model.num_hidden ,
+                filter_size=cfg.model.filter_size,stride=cfg.model.stride,layer_norm=cfg.model.layer_norm) 
+        else:
+            raise ValueError(f'Unknown model: {cfg.model.name}')
+
+
         super().__init__(cfg)
 
     def train(self) -> None:
@@ -54,7 +66,7 @@ class UnetTrainer(BaseTrainer):
         logging.info('Starting training')
 
         optimizer = optim.RMSprop(self.net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min' if self.net.n_classes > 1 else 'max', patience=2)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2)
 
         self.criterion = nn.MSELoss()
 

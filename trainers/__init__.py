@@ -6,8 +6,7 @@ These functions are for execution.
 """
 
 from .default_trainer import DefaultTrainer
-from .unet_trainer import UnetTrainer
-from .predrnn_trainer import PredRNNTrainer
+from .expert_trainer import ExpertTrainer
 from .stmoe_trainer import STMoETrainer
 def get_trainer(cfg: object) -> object:
     """Get trainer
@@ -26,9 +25,9 @@ def get_trainer(cfg: object) -> object:
     
 
     if cfg.model.name == "predrnn":
-        return PredRNNTrainer(cfg)
+        return ExpertTrainer(cfg)
     elif cfg.model.name == "unet":
-        return UnetTrainer(cfg)
+        return ExpertTrainer(cfg)
     elif cfg.model.name == "stmoe":
         return STMoETrainer(cfg)
     else:

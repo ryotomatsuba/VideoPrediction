@@ -31,7 +31,14 @@ class STMoETrainer(BaseTrainer):
             self.cfg: Config of project.
 
         """
-        self.net = STMoE(input_num=cfg.model.input_num,n_expert=2,train_model=cfg.model.train_model) # define model
+        self.net = STMoE(input_num=cfg.model.input_num,n_expert=2,expert_model=cfg.model.expert_model,train_model=cfg.model.train_model) # define model
+        if cfg.model.expert1.load:
+            self.net.expert1.load_state_dict(torch.load(cfg.model.expert1.load))
+            logging.info(f'Expert1 loaded from {cfg.model.expert1.load}')
+        if cfg.model.expert2.load:
+            self.net.expert2.load_state_dict(torch.load(cfg.model.expert2.load))
+            logging.info(f'Expert2 loaded from {cfg.model.expert2.load}')
+
         self.criterion = nn.MSELoss()
         super().__init__(cfg)
 

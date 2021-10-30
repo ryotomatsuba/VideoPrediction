@@ -38,12 +38,9 @@ class PredRNN(nn.Module):
     def forward(self, frames_tensor ):
         device=frames_tensor.device
         frames_tensor=preprocess.reshape_patch(frames_tensor, self.patch_size)
-        batch, total_length, height, width, ch = frames_tensor.size()
-        if self.mask_true is None:
-            self.mask_true = torch.zeros((batch,total_length-self.input_num-1,1,1,1), device=device)
+        batch, input_length, height, width, ch = frames_tensor.size()
         # [batch, length, height, width, channel] -> [batch, length, channel, height, width]
         frames = frames_tensor.permute(0, 1, 4, 2, 3).contiguous()
-        next_frames = []
 
         h_t = []
         c_t = []
@@ -54,35 +51,19 @@ class PredRNN(nn.Module):
             c_t.append(zeros)
 
         memory = torch.zeros([batch, self.num_hidden[0], height, width]).to(device)
-        self.mask_true=self.mask_true.to(device)
-        for t in range(self.total_length - 1):
-            # reverse schedule sampling
-            if self.reverse_scheduled_sampling == 1:
-                if t == 0:
-                    net = frames[:, t]
-                else:
-                    net = self.mask_true[:, t - 1] * frames[:, t] + (1 - self.mask_true[:, t - 1]) * x_gen
-            else:
-                if t < self.input_num:
-                    net = frames[:, t]
-                else:
-                    net = self.mask_true[:, t - self.input_num] * frames[:, t] + \
-                          (1 - self.mask_true[:, t - self.input_num]) * x_gen
-
+        for t in range(input_length):
+            net = frames[:, t]
             h_t[0], c_t[0], memory = self.cell_list[0](net, h_t[0], c_t[0], memory)
-
             for i in range(1, self.num_layers):
                 h_t[i], c_t[i], memory = self.cell_list[i](h_t[i - 1], h_t[i], c_t[i], memory)
-
             x_gen = self.conv_last(h_t[self.num_layers - 1])
-            if t >= self.input_num-1:
-                next_frames.append(x_gen)
+        
+        
+        # [batch, channel, height, width] -> [batch, height, width, channel]
+        x_gen=x_gen.permute(0, 2, 3, 1).contiguous()
+        x_gen = preprocess.reshape_patch_back(x_gen, self.patch_size)
+        return x_gen
 
-        # [length, batch, channel, height, width] -> [batch, length, height, width, channel]
-        next_frames = torch.stack(next_frames, dim=0).permute(1, 0, 3, 4, 2).contiguous()
-        next_frames = preprocess.reshape_patch_back(next_frames, self.patch_size)
-
-        return next_frames
     
     def set_mask(self,mask_true):
         self.mask_true=mask_true
