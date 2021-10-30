@@ -69,12 +69,6 @@ class STMoETest(unittest.TestCase):
         self.check_shape(pred, weight)
         self.save_gif(pred,weight)
 
-    def test_expert(self):
-        net=STMoE(train_model="expert2")
-        print(net.state_dict().keys())
-        pred, weight = net(input)
-        self.check_shape(pred, weight)
-        self.save_gif(pred,weight,save_name="expert.gif")
     
     def check_shape(self,pred,weight):
         self.assertEqual(list(pred.shape),[batch, 1 ,h ,w])
