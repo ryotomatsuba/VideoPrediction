@@ -4,6 +4,13 @@ name: stmoe
 input_num: 4
 load: False
 num_expert: 2
-train_model: expert1 # which model to train expert1, expert2, gating or all
-expert1: unet
-expert2: unet
+train_model: all # which model to train, gating or all
+expert_model: unet
+# expert1:
+#   load: /data/Result/mlruns/6/6474eadf62324bab84fc04bb67faa2bf/artifacts/best_ckpt.pth # predrnn rotation
+# expert2:
+#   load: /data/Result/mlruns/6/427f199b42294eba8ec048735c884449/artifacts/best_ckpt.pth # predrn transition
+expert1:
+  load: False #/data/Result/mlruns/5/9d1a1c8af005462db1afef304e7be68d/artifacts/best_ckpt.pth # unet rotation
+expert2:
+  load: False #/data/Result/mlruns/5/c2c8c78b58d64c1189d893b9c227c387/artifacts/best_ckpt.pth # unet transition
