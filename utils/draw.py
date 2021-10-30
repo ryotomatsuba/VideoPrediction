@@ -5,7 +5,7 @@ import matplotlib.animation as animation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import torch
 
-def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 500, greyscale=False):
+def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 500, greyscale=True):
     """
     params:
         gt_images,pd_images:(frame,width,hight)
