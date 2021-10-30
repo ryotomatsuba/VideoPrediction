@@ -73,7 +73,7 @@ def get_moing_image_video(images, num_sample, num_frames=10, choice=["transition
     """
     make moving image videos
     Params:
-        images = image shape (28,28)
+        images = image shape (num_images, 28,28)
         num_sample: number of data
         choice: which motion to use (transition, rotation, growth_decay)
     Return:
