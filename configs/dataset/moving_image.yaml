@@ -1,6 +1,7 @@
 # @package _group_
 
 name: moving_image
+image_type: mnist #moving image. mnist or cifar10
 num_data: 1000
 num_frames: 10
 img_width: 128
@@ -11,4 +12,3 @@ grey_scale: False # if true save grey scale gif
 motions: # motion to use (transition, rotation, growth_decay)
   - transition
   - rotation
-  - growth_decay

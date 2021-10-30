@@ -43,7 +43,7 @@ class TestDataset(unittest.TestCase):
         dataset=get_dataset(self.cfg)
         self.assertEqual(dataset[:].shape,(2,10,128,128))
         self.check_intensity_range(dataset[:])
-        save_gif(dataset[0],dataset[1])
+        save_gif(dataset[0],dataset[1],greyscale=True)
 
     def test_human_action(self):
         args=[

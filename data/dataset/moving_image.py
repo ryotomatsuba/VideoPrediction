@@ -1,16 +1,19 @@
-import torch
-import numpy as np
+import random
+import unittest
 import urllib.request
 from io import BytesIO
+
 import cv2
-from math import *
-from scipy import signal
-import unittest
-from utils.draw import save_gif
-from omegaconf import DictConfig
-from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
-import random
+import numpy as np
+import torch
+import torchvision
+from omegaconf import DictConfig
+from scipy import signal
+from torch.utils.data import Dataset
+from utils.draw import save_gif
+
+
 class MovingImageDataset(Dataset):
     """
     Moving Image Dataset
@@ -19,7 +22,14 @@ class MovingImageDataset(Dataset):
     def __init__(self,cfg):
         
         num_data=cfg.dataset.num_data
-        images=get_mnist_images()
+        
+        # select image_type
+        if cfg.dataset.image_type=="mnist":
+            images=get_mnist_images()
+        elif cfg.dataset.image_type=="cifar10":
+            images=get_cifar10_images()
+        else:
+            raise ValueError(f'image_type {cfg.dataset.image_type} is not supported')
         self.data = get_moing_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
         self.data *= cfg.dataset.max_intensity/255
 
@@ -41,6 +51,23 @@ def get_mnist_images():
         data = response.read()
         mnist_images = np.load(BytesIO(data),allow_pickle=True)['x_train'].reshape(60000, 28, 28)
     return mnist_images
+
+def get_cifar10_images(num_images=1000):
+    """get cifar10 images
+    Return: 
+        cifar10_images: shape(num_images, 28, 28)
+    """
+    transform=torchvision.transforms.Compose([
+        torchvision.transforms.Resize((28,28)),
+        torchvision.transforms.Grayscale(num_output_channels=1),
+        torchvision.transforms.ToTensor(),
+    ])
+    cifar10_dataset=torchvision.datasets.CIFAR10(root='/data/Datasets/', download=True, transform=transform)
+    cifar10_images=np.zeros((1000, 28, 28))
+    for i in range(num_images):
+        cifar10_images[i]=cifar10_dataset[i][0].numpy()
+    return cifar10_images
+
 
 def get_moing_image_video(images, num_sample, num_frames=10, choice=["transition", "rotation", "growth_decay"]):
     """
