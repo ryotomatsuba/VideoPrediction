@@ -44,7 +44,7 @@ class ExpertTrainer(BaseTrainer):
         else:
             raise ValueError(f'Unknown model: {cfg.model.name}')
 
-
+        self.criterion = nn.MSELoss()
         super().__init__(cfg)
 
     def train(self) -> None:
@@ -57,17 +57,12 @@ class ExpertTrainer(BaseTrainer):
         super().train()
         epochs=self.cfg.train.epochs
         lr=self.cfg.train.lr
-        device = self.device
-
-
         global_step = 0
 
         logging.info('Starting training')
 
         optimizer = optim.RMSprop(self.net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2)
-
-        self.criterion = nn.MSELoss()
 
         for epoch in range(epochs):
 
@@ -130,6 +125,31 @@ class ExpertTrainer(BaseTrainer):
         self.loss["val"].append(loss_ave)
         logging.info(f'Validation MSE: {loss_ave}')
         return loss_ave
+    
+    def test(self) -> None:
+        super().test()
+        self.net.eval()
+        epoch_loss = 0
+        batch_size=self.cfg.train.batch_size
+        width = self.cfg.dataset.img_width
+        
+        for i,X in enumerate(tqdm(self.test_loader, ncols=100)):
+            preds=torch.empty(batch_size, 0, width, width).to(device=self.device)
+            X = X.to(device=self.device, dtype=torch.float32)
+            input_num=self.cfg.model.input_num
+            total_num=X.shape[1]
+            input_X = X[:,0:input_num]
+            for t in range(input_num,total_num):
+                with torch.no_grad():
+                    pred = self.net(input_X)
+                loss = self.criterion(pred, X[:,[t]])
+                epoch_loss += loss.item()
+                input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
+                preds=torch.cat((preds,pred),dim=1) 
+            super().save_gif(X, preds, i, "test")
+        loss_ave=epoch_loss/len(self.test_loader)
+        logging.info(f'Test MSE: {loss_ave}')
+
 
     def save_gif(self,epoch):
         """
