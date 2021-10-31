@@ -28,6 +28,10 @@ class MovingImageDataset(Dataset):
             images=get_mnist_images()
         elif cfg.dataset.image_type=="cifar10":
             images=get_cifar10_images()
+        elif cfg.dataset.image_type=="mix":
+            images1=get_mnist_images()
+            images2=get_cifar10_images()
+            images=get_mix_images(images1,images2)
         else:
             raise ValueError(f'image_type {cfg.dataset.image_type} is not supported')
         self.data = get_moing_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
@@ -66,7 +70,25 @@ def get_cifar10_images(num_images=1000):
     cifar10_images=np.zeros((1000, 28, 28))
     for i in range(num_images):
         cifar10_images[i]=cifar10_dataset[i][0].numpy()
+    cifar10_images*=255
     return cifar10_images
+
+def get_mix_images(images1,images2):
+    """mix two types of images
+    Params:
+        images1: shape(num_images1, 28, 28)
+        images2: shape(num_images2, 28, 28)
+    Return:
+        mix_images: shape(num_mix_images, 28, 28)
+    """
+    if len(images1)>len(images2):
+        images1, images2=images2,images1
+    assert len(images1)<=len(images2)
+    mix_images=np.zeros(images1.shape)
+    for i in range(images1.shape[0]):
+        mix_images[i][:14]=images1[i][:14]
+        mix_images[i][14:]=images2[i][14:]
+    return mix_images
 
 
 def get_moing_image_video(images, num_sample, num_frames=10, choice=["transition", "rotation", "growth_decay"]):
@@ -166,9 +188,10 @@ class Test(unittest.TestCase):
         cfg={
             "dataset":{
                 "num_data":10,
+                "image_type":"mix",
                 "num_frames": 5,
                 "max_intensity": 1,
-                "motions":["transition", "rotation", "growth_decay"]
+                "motions":["transition",]
             }
         }
         cfg=DictConfig(cfg)
