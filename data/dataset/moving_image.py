@@ -134,21 +134,31 @@ def make_rotation_movie(image, num_frames=10, angle_range=30):
         rotation_movie[t, x:x+28, y:y+28] = cv2.warpAffine(image, rotation_matrix, (28, 28))
     return rotation_movie
 
-def make_transition_movie(image, num_frames=10, v_range=3, a_range=0):
+def make_transition_movie(image, num_frames=10, v_range=3, a_range=0, start_pos=None, velocity=None):
     """
-    Params: image = image shape (28,28)
-    Return: transition movie shape(num_frames,128,128)
+    Params: 
+        image: image shape (28,28)
+        num_frames: number of frames
+        v_range: velocity range
+        a_range: acceleration range
+        start_pos: start position (x,y) if None then random
+        velocity: velocity (x,y) if None then random
+    Return: 
+        transition_movie: shape(num_frames,128,128)
     """
+    # prepare 2x larger size to avoid overflowing.
     transition_movie = np.zeros((num_frames, 256, 256))
-    x_trans, y_trans = np.random.randint(80, 160, size=2) # trainsition position
-    v_x, v_y = np.random.randint(-v_range, v_range, size=2)
-    if a_range:
-        a_x, a_y = np.random.randint(-a_range, a_range, size=2)
-    else:
-        a_x, a_y = 0, 0
+    # start position
+    x_pos, y_pos = start_pos if start_pos else np.random.randint(10, 100, size=2)
+    x_pos, y_pos = x_pos+64, y_pos+64
+    # start velocity
+    v_x, v_y = velocity if velocity else np.random.randint(-v_range, v_range, size=2)
+    # start acceleration
+    a_x, a_y = np.random.randint(-a_range, a_range, size=2) if a_range else (0,0)
+        
     for t in range(num_frames):
-        x = x_trans + v_x*t + a_x*t**2
-        y = y_trans + v_y*t + a_y*t**2
+        x = x_pos + v_x*t + a_x*t**2
+        y = y_pos + v_y*t + a_y*t**2
         try:
             transition_movie[t, x:x+28, y:y+28] = image # put image
         except:
