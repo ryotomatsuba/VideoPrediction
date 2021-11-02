@@ -28,6 +28,9 @@ class MovingImageDataset(Dataset):
             images=get_mnist_images()
         elif cfg.dataset.image_type=="cifar10":
             images=get_cifar10_images()
+        elif "sine_wave" in cfg.dataset.image_type:
+            freq_type=cfg.dataset.image_type.replace("sine_wave_","")
+            images=get_wave_images(freq_type)
         elif cfg.dataset.image_type=="mix":
             images1=get_mnist_images()
             images2=get_cifar10_images()
@@ -72,6 +75,36 @@ def get_cifar10_images(num_images=1000):
         cifar10_images[i]=cifar10_dataset[i][0].numpy()
     cifar10_images*=255
     return cifar10_images
+
+def get_wave_images(freq_type="low",num_images=1000):
+    """get sine wave images
+    Parameters:
+        freq_type: "low", "middle" or "high"
+        num_images: number of images
+    Return:
+        wave_images: shape(num_images, 28, 28)
+    """
+    width=28
+    if freq_type=="low":
+        freq_range=np.linspace(0,width/6,num_images)
+    elif freq_type=="middle":
+        freq_range=np.linspace(width/6,width/3,num_images)
+    elif freq_type=="high":
+        freq_range=np.linspace(width/3,width/2,num_images)
+    else:
+        raise ValueError(f'freqency {freq_type} is not supported')
+    wave_images=np.zeros((num_images,width,width))
+    h_line=np.arange(0,width).reshape(-1, 1)#horizonal
+    v_line=np.arange(0,width)#vertical
+    
+    for i in range(num_images):
+        n=np.random.choice(freq_range)
+        omega=2*np.pi/width*n
+        wave_images[i]+=np.sin(omega*h_line)
+        wave_images[i]+=np.sin(omega*v_line)
+
+    wave_images*=255
+    return wave_images
 
 def get_mix_images(images1,images2):
     """mix two types of images
@@ -198,7 +231,7 @@ class Test(unittest.TestCase):
         cfg={
             "dataset":{
                 "num_data":10,
-                "image_type":"mix",
+                "image_type":"sine_wave_low",
                 "num_frames": 5,
                 "max_intensity": 1,
                 "motions":["transition",]

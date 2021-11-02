@@ -1,7 +1,7 @@
 # @package _group_
 
 name: moving_image
-image_type: mix #moving image. mnist, cifar10, or mix
+image_type: sine_wave_high #moving image. mnist, cifar10, sine_wave, or mix
 num_data: 5000
 num_frames: 10
 img_width: 128
