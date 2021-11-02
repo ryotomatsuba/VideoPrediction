@@ -6,11 +6,14 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import torch
 
 def save_gif(gt_images,pd_images,save_path="result.gif",suptitle="",interval = 500, greyscale=True):
-    """
-    params:
-        gt_images,pd_images:(frame,width,hight)
-        gt_imagesは入力+正解の出力
-        pd_imagesは予測の出力のみ
+    """save gif of gt and pd images
+    Params:
+        gt_images: (input_frame+output_frame,height,width)
+        pd_images: (output_frame,height,width)
+        save_path: path to save gif
+        suptitle: title of the gif
+        interval: interval of the gif (ms)
+        greyscale: if true, use greyscale image
     """
     if torch.is_tensor(gt_images):
         gt_images=gt_images.cpu().detach().numpy()
@@ -64,9 +67,9 @@ def draw_image(gt_images,pd_images,save_path="result.png",suptitle=""):
     plt.close()
 
 def save_weight_gif(pd_images,weights,save_path="weights.gif",suptitle="weights",interval = 500, greyscale=False):
-    """
-    params:
-        pd_images:(frame,width,hight)
+    """ save gif of weights and pd images
+    Params:
+        pd_images:(output_frame,width,hight)
         weights: Gating Networkの出力 (frame,expert,height,width,)
 
     """
