@@ -147,8 +147,9 @@ class ExpertTrainer(BaseTrainer):
                 input_X=torch.cat((input_X[:,1:],pred),dim=1) # use output image to pred next frame
                 preds=torch.cat((preds,pred),dim=1) 
             super().save_gif(X, preds, i, "test")
-        loss_ave=epoch_loss/len(self.test_loader)
-        logging.info(f'Test MSE: {loss_ave}')
+        batch_mse=epoch_loss/len(self.test_loader)
+        self.log_metrics(metrics={"batch_mse":batch_mse})
+        logging.info(f'Test MSE: {batch_mse}')
 
 
     def save_gif(self,epoch):
