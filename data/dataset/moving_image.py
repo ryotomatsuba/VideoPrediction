@@ -1,13 +1,9 @@
 import random
 import unittest
-import urllib.request
-from io import BytesIO
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torchvision
 from omegaconf import DictConfig
 from scipy import signal
 from torch.utils.data import Dataset
