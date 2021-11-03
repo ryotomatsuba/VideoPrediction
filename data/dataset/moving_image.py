@@ -12,8 +12,16 @@ from omegaconf import DictConfig
 from scipy import signal
 from torch.utils.data import Dataset
 from utils.draw import save_gif
+from data.dataset.get_images import *
 
 
+SUPPORTED_DICT = {
+    "mnist":get_mnist_images(),
+    "cifar10":get_cifar10_images(),
+    "sine_wave_high":get_wave_images(freq_type="high"),
+    "sine_wave_low":get_wave_images(freq_type="low"),
+    "sine_wave_middle":get_wave_images(freq_type="middle"),
+}
 class MovingImageDataset(Dataset):
     """
     Moving Image Dataset
@@ -24,17 +32,14 @@ class MovingImageDataset(Dataset):
         num_data=cfg.dataset.num_data
         
         # select image_type
-        if cfg.dataset.image_type=="mnist":
-            images=get_mnist_images()
-        elif cfg.dataset.image_type=="cifar10":
-            images=get_cifar10_images()
-        elif "sine_wave" in cfg.dataset.image_type:
-            freq_type=cfg.dataset.image_type.replace("sine_wave_","")
-            images=get_wave_images(freq_type)
-        elif cfg.dataset.image_type=="mix":
-            images1=get_mnist_images()
-            images2=get_cifar10_images()
+        if "_mix_" in cfg.dataset.image_type:
+            # ex : mnist_mix_sine_wave_high
+            image_type1,image_type2=cfg.dataset.image_type.split("_mix_")
+            images1=SUPPORTED_DICT[image_type1]
+            images2=SUPPORTED_DICT[image_type2]
             images=get_mix_images(images1,images2)
+        elif cfg.dataset.image_type in SUPPORTED_DICT.keys():
+            images=SUPPORTED_DICT[cfg.dataset.image_type]
         else:
             raise ValueError(f'image_type {cfg.dataset.image_type} is not supported')
         self.data = get_moing_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
@@ -47,82 +52,6 @@ class MovingImageDataset(Dataset):
         X=self.data[index]
         X=torch.from_numpy(X).type(torch.FloatTensor)
         return X
-
-def get_mnist_images():
-    """get mnist images
-    Return: 
-        mnist_images: shape(60000, 28, 28)
-    """
-    req = urllib.request.Request('https://storage.googleapis.com/tensorflow/tf-keras-datasets/mnist.npz')
-    with urllib.request.urlopen(req) as response:
-        data = response.read()
-        mnist_images = np.load(BytesIO(data),allow_pickle=True)['x_train'].reshape(60000, 28, 28)
-    return mnist_images
-
-def get_cifar10_images(num_images=1000):
-    """get cifar10 images
-    Return: 
-        cifar10_images: shape(num_images, 28, 28)
-    """
-    transform=torchvision.transforms.Compose([
-        torchvision.transforms.Resize((28,28)),
-        torchvision.transforms.Grayscale(num_output_channels=1),
-        torchvision.transforms.ToTensor(),
-    ])
-    cifar10_dataset=torchvision.datasets.CIFAR10(root='/data/Datasets/', download=True, transform=transform)
-    cifar10_images=np.zeros((1000, 28, 28))
-    for i in range(num_images):
-        cifar10_images[i]=cifar10_dataset[i][0].numpy()
-    cifar10_images*=255
-    return cifar10_images
-
-def get_wave_images(freq_type="low",num_images=1000):
-    """get sine wave images
-    Parameters:
-        freq_type: "low", "middle" or "high"
-        num_images: number of images
-    Return:
-        wave_images: shape(num_images, 28, 28)
-    """
-    width=28
-    if freq_type=="low":
-        freq_range=np.linspace(0,width/6,num_images)
-    elif freq_type=="middle":
-        freq_range=np.linspace(width/6,width/3,num_images)
-    elif freq_type=="high":
-        freq_range=np.linspace(width/3,width/2,num_images)
-    else:
-        raise ValueError(f'freqency {freq_type} is not supported')
-    wave_images=np.zeros((num_images,width,width))
-    h_line=np.arange(0,width).reshape(-1, 1)#horizonal
-    v_line=np.arange(0,width)#vertical
-    
-    for i in range(num_images):
-        n=np.random.choice(freq_range)
-        omega=2*np.pi/width*n
-        wave_images[i]+=np.sin(omega*h_line)
-        wave_images[i]+=np.sin(omega*v_line)
-
-    wave_images*=255
-    return wave_images
-
-def get_mix_images(images1,images2):
-    """mix two types of images
-    Params:
-        images1: shape(num_images1, 28, 28)
-        images2: shape(num_images2, 28, 28)
-    Return:
-        mix_images: shape(num_mix_images, 28, 28)
-    """
-    if len(images1)>len(images2):
-        images1, images2=images2,images1
-    assert len(images1)<=len(images2)
-    mix_images=np.zeros(images1.shape)
-    for i in range(images1.shape[0]):
-        mix_images[i][:14]=images1[i][:14]
-        mix_images[i][14:]=images2[i][14:]
-    return mix_images
-
 
 def get_moing_image_video(images, num_sample, num_frames=10, choice=["transition", "rotation", "growth_decay"]):
     """
@@ -231,7 +160,7 @@ class Test(unittest.TestCase):
         cfg={
             "dataset":{
                 "num_data":10,
-                "image_type":"sine_wave_low",
+                "image_type":"mnist_mix_sine_wave_high",
                 "num_frames": 5,
                 "max_intensity": 1,
                 "motions":["transition",]
