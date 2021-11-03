@@ -32,9 +32,9 @@ class MovingImageDataset(Dataset):
         num_data=cfg.dataset.num_data
         
         # select image_type
-        if "_mix_" in cfg.dataset.image_type:
-            # ex : mnist_mix_sine_wave_high
-            image_type1,image_type2=cfg.dataset.image_type.split("_mix_")
+        if "&" in cfg.dataset.image_type:
+            # ex : mnist&sine_wave_high
+            image_type1,image_type2=cfg.dataset.image_type.split("&")
             images1=SUPPORTED_DICT[image_type1]
             images2=SUPPORTED_DICT[image_type2]
             images=get_mix_images(images1,images2)
@@ -160,7 +160,7 @@ class Test(unittest.TestCase):
         cfg={
             "dataset":{
                 "num_data":10,
-                "image_type":"mnist_mix_sine_wave_high",
+                "image_type":"mnist&cifar10",
                 "num_frames": 5,
                 "max_intensity": 1,
                 "motions":["transition",]
