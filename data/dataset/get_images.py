@@ -16,6 +16,16 @@ def get_mnist_images():
         mnist_images = np.load(BytesIO(data),allow_pickle=True)['x_train'].reshape(60000, 28, 28)
     return mnist_images
 
+def get_box_images(num_images=1000):
+    """get box images
+    Return:
+        box_images: shape(num_images, 28, 28)
+    """
+    box_images=np.ones((num_images, 28, 28))
+    for i in range(num_images):
+        box_images[i]*np.random.randint(0,255)
+    return box_images
+
 def get_cifar10_images(num_images=1000):
     """get cifar10 images
     Return: 

@@ -14,6 +14,7 @@ from data.dataset.get_images import *
 SUPPORTED_DICT = {
     "mnist":get_mnist_images(),
     "cifar10":get_cifar10_images(),
+    "box":get_box_images(),
     "sine_wave_high":get_wave_images(freq_type="high"),
     "sine_wave_low":get_wave_images(freq_type="low"),
     "sine_wave_middle":get_wave_images(freq_type="middle"),
@@ -156,7 +157,7 @@ class Test(unittest.TestCase):
         cfg={
             "dataset":{
                 "num_data":10,
-                "image_type":"mnist_x_cifar10",
+                "image_type":"box",
                 "num_frames": 5,
                 "max_intensity": 1,
                 "motions":["transition",]
