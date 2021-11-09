@@ -68,8 +68,8 @@ def get_wave_images(freq_type="low",num_images=1000):
     for i in range(num_images):
         n=np.random.choice(freq_range)
         omega=2*np.pi/width*n
-        wave_images[i]+=np.sin(omega*h_line)
-        wave_images[i]+=np.sin(omega*v_line)
+        wave_images[i]+=0.25*np.sin(omega*h_line)+0.5
+        wave_images[i]+=0.25*np.sin(omega*v_line)*0.5
 
     wave_images*=255
     return wave_images

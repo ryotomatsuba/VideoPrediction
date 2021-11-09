@@ -17,8 +17,10 @@ class TestImages(unittest.TestCase):
         return
 
     def check_intensity_range(self,images):
-        print(images.min(),images.max())
-        self.assertAlmostEqual(images[0].mean(), 255/2, delta=100)
+        print(f"min:{images.min()},max:{images.max()}")
+        self.assertLessEqual(0,images.min())
+        self.assertLessEqual(images.max(),255)
+        self.assertAlmostEqual(images[0].mean(), 255/2, delta=126)
 
     def test_mnist_images(self):
         images=get_mnist_images()
