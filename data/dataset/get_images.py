@@ -2,6 +2,7 @@
 import urllib.request
 from io import BytesIO
 
+import cv2
 import numpy as np
 import torchvision
 
@@ -23,7 +24,7 @@ def get_box_images(num_images=1000):
     """
     box_images=np.ones((num_images, 28, 28))
     for i in range(num_images):
-        box_images[i]*np.random.randint(0,255)
+        box_images[i]*=np.random.randint(0,255)
     return box_images
 
 def get_cifar10_images(num_images=1000):
@@ -37,7 +38,7 @@ def get_cifar10_images(num_images=1000):
         torchvision.transforms.ToTensor(),
     ])
     cifar10_dataset=torchvision.datasets.CIFAR10(root='/data/Datasets/', download=True, transform=transform)
-    cifar10_images=np.zeros((1000, 28, 28))
+    cifar10_images=np.zeros((num_images, 28, 28))
     for i in range(num_images):
         cifar10_images[i]=cifar10_dataset[i][0].numpy()
     cifar10_images*=255
@@ -90,3 +91,10 @@ def get_mix_images(images1,images2):
         mix_images[i][14:]=images2[i][14:]
     return mix_images
 
+
+if __name__=="__main__":
+    images=get_box_images(10)
+    print(images.shape)
+    print(images.min(),images.max())
+    #save image
+    cv2.imwrite('get_image.png',images[0])
