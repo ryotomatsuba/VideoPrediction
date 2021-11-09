@@ -74,11 +74,12 @@ def get_wave_images(num_images=1000,freq_type="low"):
     wave_images*=255
     return wave_images
 
-def get_mix_images(images1,images2):
+def get_mix_images(images1,images2, gap=0):
     """mix two types of images
     Params:
         images1: shape(num_images1, 28, 28)
         images2: shape(num_images2, 28, 28)
+        gap: gap between images1 and images2
     Return:
         mix_images: shape(num_mix_images, 28, 28)
     """
@@ -87,13 +88,17 @@ def get_mix_images(images1,images2):
     assert len(images1)<=len(images2)
     mix_images=np.zeros(images1.shape)
     for i in range(images1.shape[0]):
+        # mix images1 and images2
         mix_images[i][:14]=images1[i][:14]
         mix_images[i][14:]=images2[i][14:]
+        # insert gap in the middle
+        mix_images[i][14-(gap+1)//2:14+gap//2]=np.zeros((gap,28))
     return mix_images
 
 
 if __name__=="__main__":
     images=get_wave_images()
+    images=get_mix_images(images,images,gap=1)
     print(images.shape)
     print(images.min(),images.max())
     #save image
