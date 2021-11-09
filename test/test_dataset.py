@@ -34,16 +34,16 @@ class TestDataset(unittest.TestCase):
         self.assertLess(q3, max_val)
 
 
-    def test_moving_mnist(self):
+    def test_moving_image(self):
         args=[
-            "dataset=moving_mnist",
+            "dataset=moving_image",
             "dataset.num_data=2",
             ]
         self.override_config(args)
         dataset=get_dataset(self.cfg)
         self.assertEqual(dataset[:].shape,(2,10,128,128))
         self.check_intensity_range(dataset[:])
-        save_gif(dataset[0],dataset[1])
+        save_gif(dataset[0],dataset[1],greyscale=True)
 
     def test_human_action(self):
         args=[

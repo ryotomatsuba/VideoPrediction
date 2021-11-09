@@ -4,5 +4,5 @@ name: test
 batch_size: 1
 num_save_images: 1  # of images saved per checkpoint
 num_workers: 1
-ckpt_path: /data/Result/mlruns/9/f5e475b3a04c494baddc326546ed5672/artifacts/best_ckpt.pth
+ckpt_path: /data/Result/mlruns/5/9ba13c32596b49838dec0f0e2d8fdd5c/artifacts/best_ckpt.pth
 val_percent: 1 # Percent of the data that is used as validation (0-1)

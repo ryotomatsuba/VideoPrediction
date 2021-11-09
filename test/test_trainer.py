@@ -11,7 +11,7 @@ class TestTrainer(unittest.TestCase):
         # config is relative to a module
         self.overrides=[
             "train=development",
-            "dataset=moving_mnist",
+            "dataset=moving_image",
             "dataset.num_data=4",
             "experiment.name=unittest"]
         super().__init__(methodName=methodName)
@@ -73,8 +73,8 @@ class TestTest(unittest.TestCase):
         # config is relative to a module
         self.overrides=[
             "train=test",
-            "dataset=video_data",
-            "dataset.frames_shift=600",
+            "dataset=moving_image",
+            "dataset.num_data=1",
             "experiment.name=unittest"]
         super().__init__(methodName=methodName)
     
@@ -97,6 +97,7 @@ class TestTest(unittest.TestCase):
     def tearDown(self) -> None:
         os.remove(".hydra/config.yaml")
         os.remove("train.log")
+        os.remove("pred_test_0(0).gif")
     
     def test_stmoe_test(self) -> None:
         args=["model=stmoe",]
@@ -104,4 +105,4 @@ class TestTest(unittest.TestCase):
         trainer=get_trainer(self.cfg)
         trainer.test()
         self.check_file_exists()
-        pass
+        

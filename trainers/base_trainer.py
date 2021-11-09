@@ -176,11 +176,14 @@ class BaseTrainer(ABC):
         """log artifacts"""
         self.mlwriter.log_artifact(path)
     
-    def log_metrics(self,epoch) -> None:
-        metrics={
-            "train_loss":self.loss["train"][-1],
-            "val_loss":self.loss["val"][-1],
-        }
+    def log_metrics(self,epoch=None,metrics=None) -> None:
+        if metrics is None:
+            metrics={
+                "train_loss":self.loss["train"][-1],
+                "val_loss":self.loss["val"][-1],
+            }
+        if epoch is None:
+            epoch=0
         self.mlwriter.log_metrics(metrics, step=epoch)
 
     def save_gif(self,gt_images,pd_images,epoch,phase):

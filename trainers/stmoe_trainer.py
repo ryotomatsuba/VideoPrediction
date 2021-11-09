@@ -9,7 +9,6 @@ from torch import optim
 from tqdm import tqdm
 import numpy as np
 from trainers.base_trainer import BaseTrainer
-from data.dataset import MnistDataset,ActionDataset
 from omegaconf import DictConfig
 import unittest
 
