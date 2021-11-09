@@ -23,8 +23,8 @@ class TestImages(unittest.TestCase):
         self.assertAlmostEqual(images[0].mean(), 255/2, delta=126)
 
     def test_mnist_images(self):
-        images=get_mnist_images()
-        self.assertEqual(images.shape,(60000,28,28))
+        images=get_mnist_images(num_images=10)
+        self.assertEqual(images.shape,(10,28,28))
         self.check_intensity_range(images)
 
     

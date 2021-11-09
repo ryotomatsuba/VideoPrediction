@@ -6,16 +6,16 @@ import cv2
 import numpy as np
 import torchvision
 
-def get_mnist_images():
+def get_mnist_images(num_images=1000):
     """get mnist images
     Return: 
-        mnist_images: shape(60000, 28, 28)
+        mnist_images: shape(num_images, 28, 28)
     """
     req = urllib.request.Request('https://storage.googleapis.com/tensorflow/tf-keras-datasets/mnist.npz')
     with urllib.request.urlopen(req) as response:
         data = response.read()
         mnist_images = np.load(BytesIO(data),allow_pickle=True)['x_train'].reshape(60000, 28, 28)
-    return mnist_images
+    return mnist_images[:num_images]
 
 def get_box_images(num_images=1000):
     """get box images
@@ -44,7 +44,7 @@ def get_cifar10_images(num_images=1000):
     cifar10_images*=255
     return cifar10_images
 
-def get_wave_images(freq_type="low",num_images=1000):
+def get_wave_images(num_images=1000,freq_type="low"):
     """get sine wave images
     Parameters:
         freq_type: "low", "middle" or "high"
@@ -93,7 +93,7 @@ def get_mix_images(images1,images2):
 
 
 if __name__=="__main__":
-    images=get_box_images(10)
+    images=get_wave_images()
     print(images.shape)
     print(images.min(),images.max())
     #save image
