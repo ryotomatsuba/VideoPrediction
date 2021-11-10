@@ -11,7 +11,7 @@ from utils.draw import save_gif
 from data.dataset.get_images import *
 
 
-SUPPORTED_DICT = {
+SUPPORTED_IMAGES = {
     "mnist":get_mnist_images(),
     "cifar10":get_cifar10_images(),
     "box":get_box_images(),
@@ -27,18 +27,34 @@ class MovingImageDataset(Dataset):
     def __init__(self,cfg):
         
         num_data=cfg.dataset.num_data
-        
-        # select image_type
-        if "_x_" in cfg.dataset.image_type:
-            # ex : mnist_x_sine_wave_high
-            image_type1,image_type2=cfg.dataset.image_type.split("_x_")
-            images1=SUPPORTED_DICT[image_type1]
-            images2=SUPPORTED_DICT[image_type2]
-            images=get_mix_images(images1,images2)
-        elif cfg.dataset.image_type in SUPPORTED_DICT.keys():
-            images=SUPPORTED_DICT[cfg.dataset.image_type]
+        if cfg.dataset.image_type in SUPPORTED_IMAGES.keys():
+            images=SUPPORTED_IMAGES[cfg.dataset.image_type]
         else:
             raise ValueError(f'image_type {cfg.dataset.image_type} is not supported')
+        self.data = get_moing_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
+        self.data *= cfg.dataset.max_intensity/255
+
+    def __len__(self):
+        return len(self.data)
+        
+    def __getitem__(self, index):
+        X=self.data[index]
+        X=torch.from_numpy(X).type(torch.FloatTensor)
+        return X
+
+class MixImageDataset(Dataset):
+    """
+    Moving Mix Image Dataset
+    """
+    
+    def __init__(self,cfg):
+        
+        num_data=cfg.dataset.num_data
+        # select image_type
+        image_type1,image_type2=cfg.dataset.image_type
+        images1=SUPPORTED_IMAGES[image_type1]
+        images2=SUPPORTED_IMAGES[image_type2]
+        images=get_mix_images(images1,images2,gap=cfg.dataset.gap)
         self.data = get_moing_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
         self.data *= cfg.dataset.max_intensity/255
 

@@ -1,7 +1,10 @@
 # @package _group_
 
-name: moving_image
-image_type: sine_wave_high #moving image. mnist, cifar10, sine_wave,
+name: mix_image
+gap: 0 # gap between images
+image_type: 
+  - sine_wave_high #moving image. mnist, cifar10, sine_wave, 
+  - sine_wave_low #static image. mnist, cifar10, sine_wave,
 num_data: 5000
 num_frames: 10
 img_width: 128
