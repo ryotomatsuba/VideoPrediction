@@ -1,7 +1,6 @@
 import numpy as np
 from matplotlib import image, pyplot as plt
-from numpy.lib.type_check import imag
-
+from data.dataset.get_images import get_cifar10_images
 
 def fourier_transform(img):
     """Calculate the fourier transform of an image.
@@ -62,9 +61,20 @@ def high_pass_filter(img, cutoff):
     img_filtered = inverse_fourier_transform(fourier)
     return img_filtered
 
+# pytest
+def test_fourier_transform():
+    images=get_cifar10_images(num_images=10)
+    img=images[1]
+    img_fourier = fourier_transform(img)
+    assert img_fourier.shape == img.shape
+    assert img_fourier.dtype == np.complex
+    image_back = inverse_fourier_transform(img_fourier)
+    assert image_back.shape == img.shape
+    assert np.allclose(img, image_back)
+
+
 
 if __name__=="__main__":
-    from data.dataset.get_images import get_cifar10_images
     images=get_cifar10_images(num_images=10)
     img=images[1]
     fig, ax = plt.subplots(1, 3)
@@ -74,4 +84,5 @@ if __name__=="__main__":
     ax[2].imshow(low_pass_filter(img,cut_off),cmap='gray')
     # save the image
     fig.savefig('high_pass_filter.png')
-    pass
+    # pytest
+    test_fourier_transform()
