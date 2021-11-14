@@ -36,9 +36,10 @@ def low_pass_filter(img, cutoff):
     Returns:
         img_filtered: numpy array of shape (height, width)
     """
-    fourier = fourier_transform(img)
     rows, cols = img.shape
     crow, ccol = int(rows / 2), int(cols / 2)
+    assert cutoff > 0 and cut_off < crow and cut_off < ccol, "cutoff must be greater than 0 and less than half of the image size"
+    fourier = fourier_transform(img)
     fshift = np.zeros((rows, cols), np.complex)
     fshift[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff] = fourier[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff]
     img_filtered = inverse_fourier_transform(fshift)
@@ -53,9 +54,10 @@ def high_pass_filter(img, cutoff):
     Returns:
         img_filtered: numpy array of shape (height, width)
     """
-    fourier = fourier_transform(img)
     rows, cols = img.shape
     crow, ccol = int(rows / 2), int(cols / 2)
+    assert cutoff > 0 and cut_off < crow and cut_off < ccol, "cutoff must be greater than 0 and less than half of the image size"
+    fourier = fourier_transform(img)
     fourier[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff] = 0
     img_filtered = inverse_fourier_transform(fourier)
     return img_filtered
