@@ -29,6 +29,8 @@ def get_box_images(num_images=1000):
 
 def get_cifar10_images(num_images=1000):
     """get cifar10 images
+    Params:
+        num_images: number of images to get
     Return: 
         cifar10_images: shape(num_images, 28, 28)
     """
