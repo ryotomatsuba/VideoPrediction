@@ -27,37 +27,37 @@ def inverse_fourier_transform(fourier):
     return img_back
 
 
-def low_pass_filter(img, cutoff):
+def low_pass_filter(img, cut_off):
     """Calculate the low pass filter of an image.
     Params:
         img: numpy array of shape (height, width)
-        cutoff: frequency above this value is set to 0
+        cut_off: frequency above this value is set to 0
     Returns:
         img_filtered: numpy array of shape (height, width)
     """
     rows, cols = img.shape
     crow, ccol = int(rows / 2), int(cols / 2)
-    assert cutoff > 0 and cut_off < crow and cut_off < ccol, "cutoff must be greater than 0 and less than half of the image size"
+    assert cut_off > 0 and cut_off < crow and cut_off < ccol, "cut_off must be greater than 0 and less than half of the image size"
     fourier = fourier_transform(img)
     fshift = np.zeros((rows, cols), np.complex)
-    fshift[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff] = fourier[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff]
+    fshift[crow - cut_off:crow + cut_off, ccol - cut_off:ccol + cut_off] = fourier[crow - cut_off:crow + cut_off, ccol - cut_off:ccol + cut_off]
     img_filtered = inverse_fourier_transform(fshift)
     return img_filtered
 
 
-def high_pass_filter(img, cutoff):
+def high_pass_filter(img, cut_off):
     """Calculate the high pass filter of an image.
     Params:
         img: numpy array of shape (height, width)
-        cutoff: frequency below this value is set to 0
+        cut_off: frequency below this value is set to 0
     Returns:
         img_filtered: numpy array of shape (height, width)
     """
     rows, cols = img.shape
     crow, ccol = int(rows / 2), int(cols / 2)
-    assert cutoff > 0 and cut_off < crow and cut_off < ccol, "cutoff must be greater than 0 and less than half of the image size"
+    assert cut_off > 0 and cut_off < crow and cut_off < ccol, "cut_off must be greater than 0 and less than half of the image size"
     fourier = fourier_transform(img)
-    fourier[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff] = 0
+    fourier[crow - cut_off:crow + cut_off, ccol - cut_off:ccol + cut_off] = 0
     img_filtered = inverse_fourier_transform(fourier)
     return img_filtered
 
