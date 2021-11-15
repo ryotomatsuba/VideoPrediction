@@ -3,6 +3,8 @@ from data.dataset.moving_image import *
 import tqdm
 from models.unet import UNet
 import torch.nn as nn
+from data.dataset.moving_image import get_moving_image_video, get_cifar10_images
+from utils.fourier import *
 
 def predict(net, video):
     """
@@ -38,15 +40,25 @@ def predict(net, video):
     save_gif(video[0],preds[0])
     return preds
 
+def compare_different_freq_videos(load):
+    """
+    Compare the prediction of different frequency videos.
+
+    Params:
+        load: the path of the trained model
+    Returns:
+        None
+    """
+    cut_off=7
+    for i,filter_func in enumerate([low_pass_filter,high_pass_filter]):
+        images=get_cifar10_images(num_images=3)
+        for j,image in enumerate(images):
+            images[j]=filter_func(image,cut_off)
+        videos=get_moving_image_video(images,num_sample=1,choice=["transition"])
+        net = UNet(n_channels=4, n_classes=1, bilinear=True) # define model
+        net.load_state_dict(torch.load(load, map_location="cpu"))
+        preds=predict(net, videos[0])
+        save_gif(videos[0],preds[0],save_path=f"freq_{i}.gif")
 
 if __name__ == "__main__":
-    # test
-    from data.dataset.moving_image import get_moving_image_video, get_cifar10_images
-    images=get_cifar10_images(num_images=3)
-    videos=get_moving_image_video(images,num_sample=2,choice=["transition"])
-    load="/data/Result/mlruns/5/9ba13c32596b49838dec0f0e2d8fdd5c/artifacts/best_ckpt.pth"
-    net = UNet(n_channels=4, n_classes=1, bilinear=True) # define model
-    net.load_state_dict(torch.load(load, map_location="cpu"))
-    preds=predict(net, videos[0])
-    save_gif(videos[0],preds[0])
-    pass
+    compare_different_freq_videos("/data/Models/mnist_x_cifar10.pth")
