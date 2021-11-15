@@ -19,6 +19,7 @@ SUPPORTED_IMAGES = {
     "sine_wave_low":get_wave_images(freq_type="low"),
     "sine_wave_middle":get_wave_images(freq_type="middle"),
 }
+
 class MovingImageDataset(Dataset):
     """
     Moving Image Dataset
@@ -31,7 +32,7 @@ class MovingImageDataset(Dataset):
             images=SUPPORTED_IMAGES[cfg.dataset.image_type]
         else:
             raise ValueError(f'image_type {cfg.dataset.image_type} is not supported')
-        self.data = get_moing_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
+        self.data = get_moving_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
         self.data *= cfg.dataset.max_intensity/255
 
     def __len__(self):
@@ -55,7 +56,7 @@ class MixImageDataset(Dataset):
         images1=SUPPORTED_IMAGES[image_type1]
         images2=SUPPORTED_IMAGES[image_type2]
         images=get_mix_images(images1,images2,gap=cfg.dataset.gap)
-        self.data = get_moing_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
+        self.data = get_moving_image_video(images,num_data,cfg.dataset.num_frames,cfg.dataset.motions)
         self.data *= cfg.dataset.max_intensity/255
 
     def __len__(self):
@@ -66,7 +67,7 @@ class MixImageDataset(Dataset):
         X=torch.from_numpy(X).type(torch.FloatTensor)
         return X
 
-def get_moing_image_video(images, num_sample, num_frames=10, choice=["transition", "rotation", "growth_decay"]):
+def get_moving_image_video(images, num_sample, num_frames=10, choice=["transition", "rotation", "growth_decay"]):
     """
     make moving image videos
     Params:
@@ -76,8 +77,7 @@ def get_moing_image_video(images, num_sample, num_frames=10, choice=["transition
     Return:
         data: shape(num_sample, num_frames, 128, 128)
     """
-
-    
+    assert set(choice) <= set(["transition", "rotation", "growth_decay"]), "choice must be subset of (transition, rotation, growth_decay)"
     image_num, image_h, image_w = images.shape
     output_h, output_w = 128, 128 
     seeds = np.arange(0, num_sample, 1)
