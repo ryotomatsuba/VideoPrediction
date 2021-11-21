@@ -61,21 +61,20 @@ def high_pass_filter(img, cut_off):
     img_filtered = inverse_fourier_transform(fourier)
     return img_filtered
 
-# pytest
-def test_fourier_transform():
-    images=get_cifar10_images(num_images=10)
-    img=images[1]
-    img_fourier = fourier_transform(img)
-    assert img_fourier.shape == img.shape
-    assert img_fourier.dtype == np.complex
-    image_back = inverse_fourier_transform(img_fourier)
-    assert image_back.shape == img.shape
-    assert np.allclose(img, image_back)
+def divide_by_frequency(image, cut_off):
+    """Divide an image by its frequency.
+    Params:
+        image: numpy array of shape (height, width)
+        cut_off: frequency below this value is set to 0
+    Returns:
+        [low_image, high_image]: numpy array of shape (height, width)
+    """
+    return  low_pass_filter(image, cut_off),high_pass_filter(image, cut_off)
 
 
 
 if __name__=="__main__":
-    images=get_cifar10_images(num_images=10)
+    #images=get_cifar10_images(num_images=10)
     img=images[1]
     fig, ax = plt.subplots(1, 3)
     ax[0].imshow(img, cmap='gray')
@@ -84,5 +83,3 @@ if __name__=="__main__":
     ax[2].imshow(low_pass_filter(img,cut_off),cmap='gray')
     # save the image
     fig.savefig('high_pass_filter.png')
-    # pytest
-    test_fourier_transform()

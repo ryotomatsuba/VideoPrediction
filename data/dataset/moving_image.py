@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 from utils.draw import save_gif
 from data.dataset.get_images import *
 
-
+#TODO: ファイルがimportされるたびに、ここで全ての関数が呼び出されてしまっている
 SUPPORTED_IMAGES = {
     "mnist":get_mnist_images(),
     "cifar10":get_cifar10_images(),
