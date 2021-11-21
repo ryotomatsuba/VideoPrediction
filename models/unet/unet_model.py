@@ -31,10 +31,10 @@ class UNet(nn.Module):
         x3 = self.down2(x2)
         x4 = self.down3(x3)
         x5 = self.down4(x4)
-        x = self.up1(x5, x4)
+        x = self.up1(x5, torch.zeros_like(x4))
         x = self.up2(x, torch.zeros_like(x3))
-        x = self.up3(x, x2)
-        x = self.up4(x, x1)
+        x = self.up3(x, torch.zeros_like(x2))
+        x = self.up4(x, torch.zeros_like(x1))
         logits = self.outc(x)
         return logits
    
