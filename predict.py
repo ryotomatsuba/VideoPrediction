@@ -1,8 +1,6 @@
-from matplotlib.pyplot import get
+import matplotlib.pyplot as plt
 from data.dataset.moving_image import *
-import tqdm
 from models.unet import UNet
-from torch.nn.functional import mse_loss
 from data.dataset.moving_image import get_moving_image_video, get_cifar10_images
 from utils.fourier import *
 
@@ -46,24 +44,32 @@ def frequency_band_analysis(model_path:str):
     net.load_state_dict(torch.load(model_path, map_location="cpu"))
     cut_off=7
     input_frames=4
+    output_frames=6
     model_name=model_path.split("/")[-1].split(".")[0]
     print(f"frequency_band_analysis :{model_name}")
     images=get_cifar10_images(num_images=3)
-    videos=get_moving_image_video(images,num_sample=1,choice=["transition"])
-    preds=predict(net, videos)
-    save_gif(videos[0],preds[0],save_path=f"{model_name}.gif")
-    pred_high, pred_low, truth_high, truth_low  = np.zeros((4,preds.shape[1],preds.shape[2],preds.shape[3]))
-    for j in range(len(preds[0])):
-        pred_low[j]=low_pass_filter(preds[0][j],cut_off)
-        truth_low[j]=low_pass_filter(videos[0][input_frames+j],cut_off)
-        pred_high[j]=high_pass_filter(preds[0][j],cut_off)
-        truth_high[j]=high_pass_filter(videos[0][input_frames+j],cut_off)
-    print(f"frequency_band_analysis_low")
-    per_frame_analysis(truth_low,pred_low)
-    save_gif(truth_low,pred_low,save_path=f"{model_name}_freq_0.gif")
-    print(f"frequency_band_analysis_high")
-    per_frame_analysis(truth_high,pred_high)
-    save_gif(truth_high,pred_high,save_path=f"{model_name}_freq_1.gif")
+    video_num=20
+    videos=get_moving_image_video(images,num_sample=video_num,choice=["transition"])
+    loss_list_low=np.array([0.0]*output_frames)
+    loss_list_high=np.array([0.0]*output_frames)
+    for i in range(video_num):
+        video=np.expand_dims(videos[i], axis=0)
+        preds=predict(net, video)
+        #save_gif(video[0],preds[0],save_path=f"{model_name}.gif")
+        pred_high, pred_low, truth_high, truth_low  = np.zeros((4,preds.shape[1],preds.shape[2],preds.shape[3]))
+        for j in range(len(preds[0])):
+            pred_low[j],pred_high[j]=divide_by_frequency(preds[0][j],cut_off)
+            truth_low[j],truth_high[j]=divide_by_frequency(video[0][input_frames+j],cut_off)
+        loss_list_low =loss_list_low+ per_frame_analysis(truth_low,pred_low)
+        loss_list_high = loss_list_high+per_frame_analysis(truth_high,pred_high)
+    fig = plt.figure()
+    plt.plot(loss_list_low/video_num,label="low")
+    plt.plot(loss_list_high/video_num,label="high")
+    plt.legend()
+    plt.savefig(f"{model_name}.png")
+    plt.close(fig)
+    print(f"low_loss_mean: {loss_list_low/video_num}")
+    print(f"high_loss_mean: {loss_list_high/video_num}")
 
 def predict_by_frequency_band(model_path:str,cut_off= 7):
     """
@@ -95,18 +101,21 @@ def per_frame_analysis(truth,preds):
         truth: the ground truth video
         preds: the predicted frames
     Returns:
-        None
+        np.array: the list of mse loss of each frame
     """
     assert len(truth)==len(preds)
     output_num=len(preds)
     total_loss=0
     print(f"frame_mse from 0 to {output_num}:")
+    frame_mse=np.array([0.0]*output_num)
     for i in range(output_num):
         # mse loss
         loss=np.mean(np.square(preds[i]-truth[i]))
         print(f"{loss.item()}")
+        frame_mse[i]=loss.item()
         total_loss+=loss.item()
     print(f"total_mse: {total_loss}")
+    return frame_mse
 
 if __name__ == "__main__":
     frequency_band_analysis("/data/Models/mnist_x_cifar10.pth")
